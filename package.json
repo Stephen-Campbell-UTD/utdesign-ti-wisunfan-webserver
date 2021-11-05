@@ -1,17 +1,26 @@
 {
-  "name": "wfantund-dbus",
+  "name": "ti-wisunfan-ping",
   "version": "1.0.0",
   "description": "",
-  "main": "dbus-test.js",
+  "main": "dbus_ping.js",
   "dependencies": {
-    "express": "^4.17.1"
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "net-ping": "^1.2.3"
   },
   "devDependencies": {
-    "nodemon": "^2.0.14"
+    "eslint": "^8.0.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.4.1",
+    "net-ping": "^1.2.3",
+    "os": "",
+    "fs": ""
   },
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "demo": "node src/index.js",
+    "mock": "node src/mock_server.js"
   },
   "author": "",
   "license": "ISC"

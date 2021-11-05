@@ -1,7 +1,9 @@
-# Running the backend w/ file watching
+# Setup
 
-npm run dev
+Formatter: Prettier
+Linter: eslint
 
-# Running the backend w/o file watching
+1. Install the prettier and eslint in the global npm packages
+   `npm install -g prettier eslint`
 
-npm run start
+2. Install the prettier and eslint extensions for your editor
