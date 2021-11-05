@@ -6,7 +6,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "net-ping": "^1.2.3"
+    "net-ping": "^1.2.3",
+    "chokidar": "^3.5.2"
   },
   "devDependencies": {
     "eslint": "^8.0.1",
