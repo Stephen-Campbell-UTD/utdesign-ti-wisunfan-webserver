@@ -13,14 +13,10 @@
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "prettier": "^2.4.1",
-    "net-ping": "^1.2.3",
-    "os": "",
-    "fs": ""
+    "prettier": "^2.4.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "demo": "node src/index.js",
+    "start": "node src/index.js",
     "mock": "node src/mock_server.js"
   },
   "author": "",
