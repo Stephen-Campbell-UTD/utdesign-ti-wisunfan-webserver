@@ -16,7 +16,9 @@
     "prettier": "^2.4.1"
   },
   "scripts": {
-    "start": "node src/index.js",
+    "wpan": "NWP_IFACE=wpan0 node src/index.js",
+    "wfan": "NWP_IFACE=wfan0 node src/index.js",
+    "loopback": "node src/index.js",
     "mock": "node src/mock_server.js"
   },
   "author": "",

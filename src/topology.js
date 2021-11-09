@@ -4,35 +4,58 @@ const DBUS_INTERFACE = 'com.nestlabs.WPANTunnelDriver';
 const DBUS_META_OBJECT_PATH = '/com/nestlabs/WPANTunnelDriver';
 const DBUS_WPAN0_OBJECT_PATH = DBUS_META_OBJECT_PATH + '/wpan0';
 
-async function wpan_get_prop(property_name) {
-  const bus = dbus.systemBus();
-  const object_path = DBUS_WPAN0_OBJECT_PATH;
-  const method = 'GetProp';
+async function sendDBusMessage(command, property, newValue) {
   let methodCall = new dbus.Message({
     destination: DBUS_BUS_NAME,
-    path: object_path,
+    path: DBUS_OBJECT_PATH,
     interface: DBUS_INTERFACE,
-    member: method,
-    signature: 's',
-    body: [property_name],
-  });
-  let reply = await bus.call(methodCall);
-  return reply.body[1];
-}
-async function wpan_set_prop(property_name, value) {
-  const bus = dbus.systemBus();
-  const object_path = DBUS_WPAN0_OBJECT_PATH;
-  const method = 'SetProp';
-  let methodCall = new dbus.Message({
-    destination: DBUS_BUS_NAME,
-    path: object_path,
-    interface: DBUS_INTERFACE,
-    member: method,
+    member: command,
     signature: 'ss',
-    body: [property_name, value],
+    body: [property, newValue],
   });
-  let reply = await bus.call(methodCall);
-  return reply.body[1];
+  return (await bus.call(methodCall)).body;
+}
+
+async function set_prop(property, newValue) {
+  if (typeof property != 'undefined' && newValue != '') {
+    console.log('sending dbus msg');
+    await sendDBusMessage('SetProp', property, newValue);
+    console.log('setProp sent');
+    await updateProp(property);
+    console.log('updateProp sent');
+  }
+}
+async function get_prop(property) {
+  propValues[property] = (
+    await sendDBusMessage('GetProp', property, '')
+  )[1];
+}
+
+function format_ip_string(ip) {
+  let ip_blocks = ip.split(':');
+  //add zeros form  double colon
+  //-1 if no double zero
+  const double_zero_index = ip_blocks.findIndex(
+    (val) => val.length === 0,
+  );
+
+  if (double_zero_index !== -1) {
+    const zero_block = '0000';
+    const num_blocks_to_add = 8 - ip_blocks.length + 1; // + 1 bc empty string still in ip blocks
+    const zero_blocks_to_add = [];
+    for (let i = 0; i < num_blocks_to_add; i++) {
+      zero_blocks_to_add.push(zero_block);
+    }
+
+    ip_blocks.splice(double_zero_index, 1, ...zero_blocks_to_add);
+  }
+
+  //add leading zeroes
+  ip_blocks = ip_blocks.map((ip_block) => {
+    return ip_block.padStart(4, '0');
+  });
+  const new_ip_string = ip_blocks.join(':');
+  return new_ip_string;
 }
 
 function parse_connected_devices(text) {
@@ -40,7 +63,7 @@ function parse_connected_devices(text) {
   let eachLine = text.split('\n');
   console.log('[Connected Devices] Lines found: ' + eachLine.length);
 
-  for (var i = 0, l = eachLine.length; i < l; i++) {
+  for (let i = 0, l = eachLine.length; i < l; i++) {
     if (
       !eachLine[i].includes(' ') &&
       !!eachLine[i] &&
@@ -62,13 +85,14 @@ function parse_dodag_route(text) {
 }
 
 async function get_all_routes() {
-  const connected_devices = await wpan_get_prop('connecteddevices');
+  const connected_devices = await get_prop('connecteddevices');
   const ip_addr_list = parse_connected_devices(connected_devices);
   //ip address list could be empty if only the br is in the network
-  const routes = [];
+  const br_ip = os.networkInterfaces()[interface][0]['address'];
+  const routes = [[br_ip]];
   for (const ip_addr of ip_addr_list) {
-    await wpan_set_prop('dodagroutedest', ip_addr);
-    const raw_dodag_route = await wpan_get_prop('dodagroute');
+    await set_prop('dodagroutedest', ip_addr);
+    const raw_dodag_route = await get_prop('dodagroute');
     const route = parse_dodag_route(raw_dodag_route);
     routes.push(route);
   }
@@ -102,12 +126,17 @@ function routes_to_flattened_graph(routes) {
   return { nodes, edges };
 }
 
+function format_route_ips(routes) {
+  return routes.map((route) =>
+    route.map((ip) => format_ip_string(ip)),
+  );
+}
 async function get_latest_topology() {
   const routes = await get_all_routes();
-  const flattened_topology = routes_to_flattened_graph(routes);
+  const formatted_routes = format_route_ips(routes);
+  const flattened_topology =
+    routes_to_flattened_graph(formatted_routes);
   return flattened_topology;
 }
-
-// get_all_routes().then((routes)=>{console.log("Routes",routes)})
 
 module.exports = { get_latest_topology };

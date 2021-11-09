@@ -8,12 +8,13 @@ const { repeat_n_times, timestamp } = require('./utils.js');
 let chokidar = require('chokidar');
 const { get_latest_topology } = require('./topology.js');
 
-const INTERFACE = 'lo';
 const TOPOLOGY_UPDATE_INTERVAL = 30;
+
+const interface = process.env.NWP_IFACE || 'lo';
 
 const state = {
   connected: false, //gw bringup
-  source_ip: os.networkInterfaces()[INTERFACE][0]['address'],
+  source_ip: os.networkInterfaces()[interface][0]['address'],
   pingbursts: [],
   topology: { nodes: [], edges: [] },
 };
