@@ -4,10 +4,11 @@
   "description": "",
   "main": "dbus_ping.js",
   "dependencies": {
+    "chokidar": "^3.5.2",
     "cors": "^2.8.5",
+    "dbus-next": "^0.10.2",
     "express": "^4.17.1",
-    "net-ping": "^1.2.3",
-    "chokidar": "^3.5.2"
+    "net-ping": "^1.2.3"
   },
   "devDependencies": {
     "eslint": "^8.0.1",
@@ -16,8 +17,8 @@
     "prettier": "^2.4.1"
   },
   "scripts": {
-    "wpan": "NWP_IFACE=wpan0 node src/index.js",
-    "wfan": "NWP_IFACE=wfan0 node src/index.js",
+    "wpan": "sudo NWP_IFACE=wpan0 node src/index.js",
+    "wfan": "sudo NWP_IFACE=wfan0 node src/index.js",
     "loopback": "node src/index.js",
     "mock": "node src/mock_server.js"
   },

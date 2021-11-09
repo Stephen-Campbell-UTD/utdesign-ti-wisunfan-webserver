@@ -11,6 +11,7 @@ const { get_latest_topology } = require('./topology.js');
 const TOPOLOGY_UPDATE_INTERVAL = 30;
 
 const interface = process.env.NWP_IFACE || 'lo';
+const output_file_path = './output/Ping_Results.csv';
 
 const state = {
   connected: false, //gw bringup
@@ -24,23 +25,27 @@ function initialize_ping() {
   const csv_headers =
     'ping_burst_id,source_ip,dest_ip,start_time,duration,packet_size,was_success\n';
   fs.writeFile(
-    'output/Ping_Results.csv',
+      output_file_path,
     csv_headers,
     function (err) {
       if (err) throw err;
     },
   );
 
-  setInterval(async () => {
-    if (!state.connected) {
-      return;
+   async function update_topology(){
+       console.log("TOPOLOGY",state)
+        // if (!state.connected) {
+        //   return;
+        // }
+        try {
+          state.topology = await get_latest_topology();
+        } catch (e) {
+          console.error(e);
+        }
     }
-    try {
-      state.topology = await get_latest_topology();
-    } catch (e) {
-      console.error(e);
-    }
-  }, TOPOLOGY_UPDATE_INTERVAL * 1000);
+
+  update_topology().catch(e=>console.log(e))
+  setInterval(update_topology, TOPOLOGY_UPDATE_INTERVAL * 1000);
 }
 
 function initialize_express() {
@@ -59,12 +64,12 @@ function initialize_express() {
       id,
       source_ip,
       dest_ip,
-      sent_timestamp,
+      start,
       duration,
-      size,
+      packet_size,
       was_success,
     } = ping_record;
-    sent_timestamp = sent_timestamp.replace(',', '');
+    start = start.replace(',', '');
     const row_string =
       [
         id,
@@ -72,10 +77,10 @@ function initialize_express() {
         dest_ip,
         start,
         duration,
-        size,
+        packet_size,
         was_success,
       ].join(',') + '\n';
-    fs.appendFile('Ping_Results.csv', row_string, function (err) {
+    fs.appendFile(output_file_path, row_string, function (err) {
       if (err) {
         console.log(err);
       }
@@ -116,8 +121,9 @@ function initialize_express() {
               start: timestamp(sent),
               duration: error ? -1 : ms,
               packet_size: size,
-              was_success: !!error, //js convert to bool
+              was_success: !error, //js convert to bool
             };
+            console.log(ping_record, error,rcvd)
             records.push(ping_record);
             append_ping_record_to_csv(ping_record);
           },
@@ -127,21 +133,21 @@ function initialize_express() {
       pingburst_request.packet_size,
       pingburst.records,
     );
-    pingbursts.push(pingburst);
+    state.pingbursts.push(pingburst);
     res.json({ id });
   });
 
   app.get('/pingbursts/:id', (req, res) => {
     pingburst_id = req.params.id;
-    res.json(pingbursts[pingburst_id]);
+    res.json(state.pingbursts[pingburst_id]);
   });
   app.get('/pingbursts', (req, res) => {
-    res.json(pingbursts);
+    res.json(state.pingbursts);
   });
   app.get('/gw_bringup', (req, res) => {
     res.json(state.connected);
   });
-  app.listen(PORT, () => {
+  app.listen(PORT,'192.168.1.11', () => {
     console.log(`Listening on http://localhost:${PORT}`);
   });
 }
@@ -162,18 +168,18 @@ function initialize_gw_bringup() {
     });
 
   function flash_connection_status() {
-    console.log('Device connected: ' + connected);
+    console.log('Device connected: ' + state.connected);
   }
 
   function device_added() {
     console.log('Border router connected');
     start_wpantund();
-    connected = true;
+    state.connected = true;
   }
 
   function device_removed() {
     console.log('Border router disconnected');
-    connected = false;
+    state.connected = false;
   }
 
   function start_wpantund() {

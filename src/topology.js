@@ -1,10 +1,12 @@
 let dbus = require('dbus-next');
+const os = require('os')
 const DBUS_BUS_NAME = 'com.nestlabs.WPANTunnelDriver';
 const DBUS_INTERFACE = 'com.nestlabs.WPANTunnelDriver';
 const DBUS_META_OBJECT_PATH = '/com/nestlabs/WPANTunnelDriver';
-const DBUS_WPAN0_OBJECT_PATH = DBUS_META_OBJECT_PATH + '/wpan0';
+const DBUS_OBJECT_PATH = DBUS_META_OBJECT_PATH + '/' + process.env.NWP_IFACE;
 
 async function sendDBusMessage(command, property, newValue) {
+    const bus = dbus.systemBus()
   let methodCall = new dbus.Message({
     destination: DBUS_BUS_NAME,
     path: DBUS_OBJECT_PATH,
@@ -17,18 +19,17 @@ async function sendDBusMessage(command, property, newValue) {
 }
 
 async function set_prop(property, newValue) {
+    console.log("DBUS SET",property, newValue)
   if (typeof property != 'undefined' && newValue != '') {
-    console.log('sending dbus msg');
     await sendDBusMessage('SetProp', property, newValue);
-    console.log('setProp sent');
-    await updateProp(property);
-    console.log('updateProp sent');
   }
 }
 async function get_prop(property) {
-  propValues[property] = (
+  newValue = (
     await sendDBusMessage('GetProp', property, '')
   )[1];
+  console.log("DBUS GET",property, typeof newValue,newValue)
+    return newValue
 }
 
 function format_ip_string(ip) {
@@ -59,28 +60,29 @@ function format_ip_string(ip) {
 }
 
 function parse_connected_devices(text) {
-  let ip_addr_list = [];
-  let eachLine = text.split('\n');
-  console.log('[Connected Devices] Lines found: ' + eachLine.length);
+  let line_array = text.split('\n');
+  const ip_addr_list = line_array.map(line=>line.trim()).filter(line=>line.length>0&&line.includes(":"))
+    return ip_addr_list
 
-  for (let i = 0, l = eachLine.length; i < l; i++) {
-    if (
-      !eachLine[i].includes(' ') &&
-      !!eachLine[i] &&
-      eachLine[i][0] != ':'
-    ) {
-      // add this ip address to the list
-      ip_addr_list.push(eachLine[i]);
-    }
-  }
-  return ip_addr_list;
+
+
+
+//   for (let i = 0, l = eachLine.length; i < l; i++) {
+//     if (
+//       !eachLine[i].includes(' ') &&
+//       !!eachLine[i] &&
+//       eachLine[i][0] != ':'
+//     ) {
+//       // add this ip address to the list
+//       ip_addr_list.push(eachLine[i]);
+//     }
+//   }
+//   return ip_addr_list;
 }
 
 function parse_dodag_route(text) {
   var line_list = text.split('\n');
-  return filter(
-    line_list,
-    (ipv6_candidate) => !ipv6_candidate.includes('Path'),
+  return line_list.filter((ipv6_candidate) => !ipv6_candidate.includes('Path')
   );
 }
 
@@ -88,7 +90,7 @@ async function get_all_routes() {
   const connected_devices = await get_prop('connecteddevices');
   const ip_addr_list = parse_connected_devices(connected_devices);
   //ip address list could be empty if only the br is in the network
-  const br_ip = os.networkInterfaces()[interface][0]['address'];
+  const br_ip = os.networkInterfaces()[process.env.NWP_IFACE][0]['address'];
   const routes = [[br_ip]];
   for (const ip_addr of ip_addr_list) {
     await set_prop('dodagroutedest', ip_addr);
@@ -102,6 +104,7 @@ async function get_all_routes() {
 function routes_to_flattened_graph(routes) {
   let nodes = [];
   //populate nodes
+  console.log(routes);
   for (const route of routes) {
     for (const ip_address of route) {
       if (!nodes.some((node) => node.id === ip_address)) {
@@ -131,6 +134,7 @@ function format_route_ips(routes) {
     route.map((ip) => format_ip_string(ip)),
   );
 }
+
 async function get_latest_topology() {
   const routes = await get_all_routes();
   const formatted_routes = format_route_ips(routes);
