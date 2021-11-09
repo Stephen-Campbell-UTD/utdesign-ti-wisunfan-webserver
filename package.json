@@ -4,10 +4,11 @@
   "description": "",
   "main": "dbus_ping.js",
   "dependencies": {
+    "chokidar": "^3.5.2",
     "cors": "^2.8.5",
+    "dbus-next": "^0.10.2",
     "express": "^4.17.1",
-    "net-ping": "^1.2.3",
-    "chokidar": "^3.5.2"
+    "net-ping": "^1.2.3"
   },
   "devDependencies": {
     "eslint": "^8.0.1",

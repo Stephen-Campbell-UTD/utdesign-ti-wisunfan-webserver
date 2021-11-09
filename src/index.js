@@ -7,6 +7,9 @@ const { exec } = require('child_process');
 const { repeat_n_times, timestamp } = require('./utils.js');
 let chokidar = require('chokidar');
 const { get_latest_topology } = require('./topology.js');
+const { sendDBusMessage, updateProp, updateProps,
+  setProp, getProp, getProps
+} = require('./dbusCommands.js')
 
 const INTERFACE = 'lo';
 const TOPOLOGY_UPDATE_INTERVAL = 30;
@@ -140,6 +143,36 @@ function initialize_express() {
   app.get('/gw_bringup', (req, res) => {
     res.json(state.connected);
   });
+  // example query ?property=NCP:TXPower
+  app.get('/getProp', (req, res) => {
+    res.send({
+      [req.query.property]: getProp(req.query.property)
+    })
+  })
+  app.get('/getProps', (req, res) => {
+    res.send(getProps())
+  })
+  // example query ?property=NCP:TXPower
+  app.get('/updateProp', (req, res) => {
+    updateProp(req.query.property)
+  })
+  app.get('/updateProps', (req, res) => {
+    updateProps()
+  })
+  // example query ?property=NCP:TWPower&newValue=10
+  app.get('/setProp', async (req, res) => {
+    console.log(req.query);
+    await setProp(req.query.property, req.query.newValue)
+    console.log('setProp complete');
+  })
+  // example query ?newValue=2020abcd21124b00&insert=false
+  .get('/macfilterlist', (req, res) => {
+    if (req.query.insert == 'true') {
+      sendDBusMessage('InsertProp', 'macfilterlist', req.query.newValue)
+    } else if (req.query.insert == 'false') {
+      sendDBusMessage('RemoveProp', 'macfilterlist', req.query.newValue)
+    }
+  })
   app.listen(PORT, () => {
     console.log(`Listening on http://localhost:${PORT}`);
   });
@@ -151,6 +184,7 @@ function initialize_gw_bringup() {
   let watcher = chokidar.watch(port_path, {
     ignored: /^\./,
     persistent: true,
+    ignorePermissionErrors: true
   });
 
   watcher
@@ -178,7 +212,7 @@ function initialize_gw_bringup() {
   function start_wpantund() {
     console.log('Starting wfantund');
     exec(
-      'sudo /usr/local/sbin/wfantund -s ' + port_path + ' &',
+      'sudo wfantund -s ' + port_path,
       (error, stdout, stderr) => {
         if (error) {
           console.error(`exec error: ${error}`);
@@ -192,7 +226,7 @@ function initialize_gw_bringup() {
 }
 
 function main() {
-  initialize_gw_bringup();
+  // initialize_gw_bringup();
   initialize_ping();
   initialize_express();
 }
