@@ -7,16 +7,23 @@ const { exec } = require('child_process');
 const { repeat_n_times, timestamp } = require('./utils.js');
 let chokidar = require('chokidar');
 const { get_latest_topology } = require('./topology.js');
-const { sendDBusMessage, updateProp, updateProps,
-  setProp, getProp, getProps
-} = require('./dbusCommands.js')
+const {
+  sendDBusMessage,
+  updateProp,
+  updateProps,
+  setProp,
+  getProp,
+  getProps,
+} = require('./dbusCommands.js');
 
-const INTERFACE = 'lo';
 const TOPOLOGY_UPDATE_INTERVAL = 30;
+
+const interface = process.env.NWP_IFACE || 'lo';
+const output_file_path = './output/Ping_Results.csv';
 
 const state = {
   connected: false, //gw bringup
-  source_ip: os.networkInterfaces()[INTERFACE][0]['address'],
+  source_ip: os.networkInterfaces()[interface][0]['address'],
   pingbursts: [],
   topology: { nodes: [], edges: [] },
 };
@@ -25,24 +32,24 @@ function initialize_ping() {
   //creation of the csv file
   const csv_headers =
     'ping_burst_id,source_ip,dest_ip,start_time,duration,packet_size,was_success\n';
-  fs.writeFile(
-    'output/Ping_Results.csv',
-    csv_headers,
-    function (err) {
-      if (err) throw err;
-    },
-  );
+  fs.writeFile(output_file_path, csv_headers, function (err) {
+    if (err) throw err;
+  });
 
-  setInterval(async () => {
-    if (!state.connected) {
-      return;
-    }
+  async function update_topology() {
+    console.log('TOPOLOGY', state);
+    // if (!state.connected) {
+    //   return;
+    // }
     try {
       state.topology = await get_latest_topology();
     } catch (e) {
       console.error(e);
     }
-  }, TOPOLOGY_UPDATE_INTERVAL * 1000);
+  }
+
+  update_topology().catch((e) => console.log(e));
+  setInterval(update_topology, TOPOLOGY_UPDATE_INTERVAL * 1000);
 }
 
 function initialize_express() {
@@ -61,12 +68,12 @@ function initialize_express() {
       id,
       source_ip,
       dest_ip,
-      sent_timestamp,
+      start,
       duration,
-      size,
+      packet_size,
       was_success,
     } = ping_record;
-    sent_timestamp = sent_timestamp.replace(',', '');
+    start = start.replace(',', '');
     const row_string =
       [
         id,
@@ -74,10 +81,10 @@ function initialize_express() {
         dest_ip,
         start,
         duration,
-        size,
+        packet_size,
         was_success,
       ].join(',') + '\n';
-    fs.appendFile('Ping_Results.csv', row_string, function (err) {
+    fs.appendFile(output_file_path, row_string, function (err) {
       if (err) {
         console.log(err);
       }
@@ -118,8 +125,9 @@ function initialize_express() {
               start: timestamp(sent),
               duration: error ? -1 : ms,
               packet_size: size,
-              was_success: !!error, //js convert to bool
+              was_success: !error, //js convert to bool
             };
+            console.log(ping_record, error, rcvd);
             records.push(ping_record);
             append_ping_record_to_csv(ping_record);
           },
@@ -129,16 +137,16 @@ function initialize_express() {
       pingburst_request.packet_size,
       pingburst.records,
     );
-    pingbursts.push(pingburst);
+    state.pingbursts.push(pingburst);
     res.json({ id });
   });
 
   app.get('/pingbursts/:id', (req, res) => {
     pingburst_id = req.params.id;
-    res.json(pingbursts[pingburst_id]);
+    res.json(state.pingbursts[pingburst_id]);
   });
   app.get('/pingbursts', (req, res) => {
-    res.json(pingbursts);
+    res.json(state.pingbursts);
   });
   app.get('/gw_bringup', (req, res) => {
     res.json(state.connected);
@@ -146,33 +154,42 @@ function initialize_express() {
   // example query ?property=NCP:TXPower
   app.get('/getProp', (req, res) => {
     res.send({
-      [req.query.property]: getProp(req.query.property)
-    })
-  })
+      [req.query.property]: getProp(req.query.property),
+    });
+  });
   app.get('/getProps', (req, res) => {
-    res.send(getProps())
-  })
+    res.send(getProps());
+  });
   // example query ?property=NCP:TXPower
   app.get('/updateProp', (req, res) => {
-    updateProp(req.query.property)
-  })
+    updateProp(req.query.property);
+  });
   app.get('/updateProps', (req, res) => {
-    updateProps()
-  })
+    updateProps();
+  });
   // example query ?property=NCP:TWPower&newValue=10
-  app.get('/setProp', async (req, res) => {
-    console.log(req.query);
-    await setProp(req.query.property, req.query.newValue)
-    console.log('setProp complete');
-  })
-  // example query ?newValue=2020abcd21124b00&insert=false
-  .get('/macfilterlist', (req, res) => {
-    if (req.query.insert == 'true') {
-      sendDBusMessage('InsertProp', 'macfilterlist', req.query.newValue)
-    } else if (req.query.insert == 'false') {
-      sendDBusMessage('RemoveProp', 'macfilterlist', req.query.newValue)
-    }
-  })
+  app
+    .get('/setProp', async (req, res) => {
+      console.log(req.query);
+      await setProp(req.query.property, req.query.newValue);
+      console.log('setProp complete');
+    })
+    // example query ?newValue=2020abcd21124b00&insert=false
+    .get('/macfilterlist', (req, res) => {
+      if (req.query.insert == 'true') {
+        sendDBusMessage(
+          'InsertProp',
+          'macfilterlist',
+          req.query.newValue,
+        );
+      } else if (req.query.insert == 'false') {
+        sendDBusMessage(
+          'RemoveProp',
+          'macfilterlist',
+          req.query.newValue,
+        );
+      }
+    });
   app.listen(PORT, () => {
     console.log(`Listening on http://localhost:${PORT}`);
   });
@@ -184,7 +201,7 @@ function initialize_gw_bringup() {
   let watcher = chokidar.watch(port_path, {
     ignored: /^\./,
     persistent: true,
-    ignorePermissionErrors: true
+    ignorePermissionErrors: true,
   });
 
   watcher
@@ -195,38 +212,35 @@ function initialize_gw_bringup() {
     });
 
   function flash_connection_status() {
-    console.log('Device connected: ' + connected);
+    console.log('Device connected: ' + state.connected);
   }
 
   function device_added() {
     console.log('Border router connected');
     start_wpantund();
-    connected = true;
+    state.connected = true;
   }
 
   function device_removed() {
     console.log('Border router disconnected');
-    connected = false;
+    state.connected = false;
   }
 
   function start_wpantund() {
     console.log('Starting wfantund');
-    exec(
-      'sudo wfantund -s ' + port_path,
-      (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          return;
-        }
-        console.log(`stdout: ${stdout}`);
-        console.error(`stderr: ${stderr}`);
-      },
-    );
+    exec('sudo wfantund -s ' + port_path, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.error(`stderr: ${stderr}`);
+    });
   }
 }
 
 function main() {
-  // initialize_gw_bringup();
+  initialize_gw_bringup();
   initialize_ping();
   initialize_express();
 }
