@@ -20,7 +20,9 @@
     "wpan": "sudo NWP_IFACE=wpan0 node src/index.js",
     "wfan": "sudo NWP_IFACE=wfan0 node src/index.js",
     "loopback": "node src/index.js",
-    "mock": "node src/mock_server.js"
+    "mock": "node mock/mock_server.js",
+    "mock_connect": "node mock/mock_client.js mock_connect",
+    "mock_disconnect": "node mock/mock_client.js mock_disconnect"
   },
   "author": "",
   "license": "ISC"
