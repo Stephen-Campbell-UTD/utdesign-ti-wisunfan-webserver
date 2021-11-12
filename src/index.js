@@ -26,7 +26,7 @@ const state = {
   ready: false,
   interval_id_ping: 0,
   interval_id_topology: 0,
-  source_ip: "wfan0 interface not found",//os.networkInterfaces()[interface][0]['address'],
+  source_ip: 'wfan0 interface not found',
   pingbursts: [],
   topology: { nodes: [], edges: [] },
 };
@@ -52,7 +52,10 @@ function initialize_ping() {
   }
 
   update_topology().catch((e) => console.log(e));
-  state.interval_id_topology = setInterval(update_topology, TOPOLOGY_UPDATE_INTERVAL * 1000);
+  state.interval_id_topology = setInterval(
+    update_topology,
+    TOPOLOGY_UPDATE_INTERVAL * 1000,
+  );
 }
 
 function initialize_express() {
@@ -225,14 +228,14 @@ function initialize_gw_bringup() {
     console.log('Border router connected');
     start_wpantund();
     state.connected = true;
-    state.interval_id_ping = setInterval(setup,1000)
+    state.interval_id_ping = setInterval(setup, 1000);
   }
 
   function device_removed() {
     console.log('Border router disconnected');
     state.connected = false;
-    state.ready = false
-    clearInterval(state.interval_id_topology)
+    state.ready = false;
+    clearInterval(state.interval_id_topology);
   }
 
   function start_wpantund() {
@@ -247,29 +250,24 @@ function initialize_gw_bringup() {
     });
   }
 }
-function setup()
-{
-  try{
+function setup() {
+  try {
     //console.log(os.networkInterfaces()[interface])
-    console.log(os.networkInterfaces()[interface][0]['address'])
-    if(os.networkInterfaces()[interface] !== undefined)
-    {
-      state.source_ip = os.networkInterfaces()[interface][0]['address']
-      initialize_ping()
+    console.log(os.networkInterfaces()[interface][0]['address']);
+    if (os.networkInterfaces()[interface] !== undefined) {
+      state.source_ip =
+        os.networkInterfaces()[interface][0]['address'];
+      initialize_ping();
       state.ready = true;
-      clearInterval(state.interval_id_ping)
+      clearInterval(state.interval_id_ping);
     }
-  }
-  catch{
-    console.log("wfan0 interface not up")
+  } catch {
+    console.log('wfan0 interface not up');
     //state.ready = false
-
   }
-
 }
 function main() {
   initialize_gw_bringup();
-  //initialize_ping();
   initialize_express();
 }
 
