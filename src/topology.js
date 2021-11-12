@@ -19,7 +19,7 @@ async function sendDBusMessage(command, property, newValue) {
 }
 
 async function set_prop(property, newValue) {
-    console.log("DBUS SET",property, newValue)
+    //console.log("DBUS SET",property, newValue)
   if (typeof property != 'undefined' && newValue != '') {
     await sendDBusMessage('SetProp', property, newValue);
   }
@@ -28,11 +28,12 @@ async function get_prop(property) {
   newValue = (
     await sendDBusMessage('GetProp', property, '')
   )[1];
-  console.log("DBUS GET",property, typeof newValue,newValue)
+  //console.log("DBUS GET",property, typeof newValue,newValue)
     return newValue
 }
 
 function format_ip_string(ip) {
+  
   let ip_blocks = ip.split(':');
   //add zeros form  double colon
   //-1 if no double zero
@@ -61,7 +62,9 @@ function format_ip_string(ip) {
 
 function parse_connected_devices(text) {
   let line_array = text.split('\n');
-  const ip_addr_list = line_array.map(line=>line.trim()).filter(line=>line.length>0&&line.includes(":"))
+  //console.log("lolll"+text+"lol");
+  const ip_addr_list = line_array.map(line=>line.trim()).filter(line=>line.length>0&&line.includes(":")&&!line.includes("List of connected devices currently in routing table:"))
+  //console.log(ip_addr_list)
     return ip_addr_list
 
 
@@ -82,7 +85,7 @@ function parse_connected_devices(text) {
 
 function parse_dodag_route(text) {
   var line_list = text.split('\n');
-  return line_list.filter((ipv6_candidate) => !ipv6_candidate.includes('Path')
+  return line_list.filter((ipv6_candidate) => !ipv6_candidate.includes('Path') && !ipv6_candidate.includes('0000:0000:0000:0000:0000:0000:0000:0000')
   );
 }
 
