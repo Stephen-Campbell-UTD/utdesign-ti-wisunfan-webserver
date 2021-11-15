@@ -43,16 +43,16 @@ function initialize_ping() {
     if (err) throw err;
   });
 
-  async function update_topology() {
-    console.log('[PING] Topology Updated');
-    state.topology = mock_topology;
-  }
-
-  update_topology().catch((e) => console.log(e));
-  state.interval_id_topology = setInterval(
-    update_topology,
-    TOPOLOGY_UPDATE_INTERVAL * 1000,
-  );
+  state.topology = mock_topology;
+  console.log('[PING].[MOCK ONLY] Topology Initialized');
+  // async function update_topology() {
+  //   clearInterval(state.interval_id_topology)
+  // }
+  // update_topology().catch((e) => console.log(e));
+  // state.interval_id_topology = setInterval(
+  //   update_topology,
+  //   TOPOLOGY_UPDATE_INTERVAL * 1000,
+  // );
 }
 
 function initialize_express({ device_added, device_removed }) {
@@ -68,6 +68,22 @@ function initialize_express({ device_added, device_removed }) {
     next();
   }
   app.use(logger);
+
+  app.post('/led', (req, res) => {
+    console.log(`[Express] ${req.method} ${req.path}`);
+    const { ip_address, rled_state, gled_state } = req.body;
+    let target_node = state.topology.nodes.find(
+      (node) => node.data.id === ip_address,
+    );
+    if (target_node === undefined) {
+      res.json({ success: false });
+      return;
+    }
+    target_node.data['rled_state'] = rled_state;
+    target_node.data['gled_state'] = gled_state;
+    console.log(target_node);
+    res.json({ success: true });
+  });
 
   app.get('/topology', (req, res) => {
     res.json(state.topology);
@@ -229,7 +245,8 @@ function initialize_gw_bringup() {
     console.log('[GW BRINGUP] Border router disconnected');
     state.connected = false;
     state.ready = false;
-    clearInterval(state.interval_id_topology);
+    state.topology = { nodes: [], edges: [] };
+    // clearInterval(state.interval_id_topology);
   }
 
   function start_wfantund() {

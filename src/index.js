@@ -65,6 +65,11 @@ function initialize_express() {
   app.use(express.json());
   app.use(express.static('./output'));
 
+  app.post('/led', (req, res) => {
+    const { ip_address, rled_state, gled_state } = req.body;
+    res.json(true);
+  });
+
   app.get('/topology', (req, res) => {
     res.json(state.topology);
   });
