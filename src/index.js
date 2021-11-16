@@ -16,7 +16,7 @@ const {
   getProps,
 } = require('./dbusCommands.js');
 
-const TOPOLOGY_UPDATE_INTERVAL = 5;
+const TOPOLOGY_UPDATE_INTERVAL = 30;
 
 const interface = process.env.NWP_IFACE;
 const output_file_path = './output/Ping_Results.csv';
@@ -30,6 +30,8 @@ const state = {
   pingbursts: [],
   topology: { nodes: [], edges: [] },
 };
+
+setInterval(updateProps,30000);
 
 function initialize_ping() {
   //creation of the csv file
@@ -172,24 +174,26 @@ function initialize_express() {
     res.send(getProps());
   });
   // example query ?property=NCP:TXPower
-  app.get('/updateProp', (req, res) => {
-    updateProp(req.query.property);
-  });
-  app.get('/updateProps', (req, res) => {
-    updateProps();
-  });
+  // app.get('/updateProp', (req, res) => {
+  //   updateProp(req.query.property);
+  // });
+  // app.get('/updateProps', (req, res) => {
+  //   updateProps();
+  // });
   app.get('/ready', (req, res) => {
     res.json(state.ready);
   });
   // example query ?property=NCP:TWPower&newValue=10
-  app
-    .get('/setProp', async (req, res) => {
-      console.log(req.query);
+  app.get('/setProp', async (req, res) => {
+      // console.log(req.query);
+     if(state.connected){
       await setProp(req.query.property, req.query.newValue);
-      console.log('setProp complete');
+     }
+      // console.log('setProp complete');
     })
     // example query ?newValue=2020abcd21124b00&insert=false
-    .get('/macfilterlist', (req, res) => {
+    app.get('/macfilterlist', (req, res) => {
+        if(state.connected){
       if (req.query.insert == 'true') {
         sendDBusMessage(
           'InsertProp',
@@ -203,6 +207,7 @@ function initialize_express() {
           req.query.newValue,
         );
       }
+}
     });
   app.listen(PORT, () => {
     console.log(`Listening on http://localhost:${PORT}`);
@@ -232,7 +237,15 @@ function initialize_gw_bringup() {
   function device_added() {
     console.log('Border router connected');
     start_wpantund();
-    state.connected = true;
+    let interval_id =  setInterval(()=>{
+        try{
+            updateProps()
+            state.connected = true;
+            clearInterval(interval_id)
+        }catch(e){
+            console.log(e)
+        }
+    },500) 
     state.interval_id_ping = setInterval(setup, 1000);
   }
 

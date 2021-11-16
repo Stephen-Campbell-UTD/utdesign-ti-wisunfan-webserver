@@ -62,9 +62,10 @@ function format_ip_string(ip) {
 
 function parse_connected_devices(text) {
   let line_array = text.split('\n');
-  //console.log("lolll"+text+"lol");
-  const ip_addr_list = line_array.map(line=>line.trim()).filter(line=>line.length>0&&line.includes(":")&&!line.includes("List of connected devices currently in routing table:"))
-  //console.log(ip_addr_list)
+  const ip_addr_list =
+        line_array.map(line=>line.trim()).filter(line=>line.length>0&&line.includes(":")&&
+            // !line.includes("List of connected devices currently in routing table:")) &&
+            !line.includes(" "))
     return ip_addr_list
 
 
@@ -85,8 +86,16 @@ function parse_connected_devices(text) {
 
 function parse_dodag_route(text) {
   var line_list = text.split('\n');
-  return line_list.filter((ipv6_candidate) => !ipv6_candidate.includes('Path') && !ipv6_candidate.includes('0000:0000:0000:0000:0000:0000:0000:0000')
-  );
+
+  const results =
+        line_list.map(line=>line.trim()).filter(line=>line.length>0&&line.includes(":")&&
+            // !line.includes("List of connected devices currently in routing table:")) &&
+            !line.includes(" "))
+  // let result =  line_list.filter(
+  //     (ipv6_candidate) => !ipv6_candidate.includes('Path') && !ipv6_candidate.includes('0000:0000:0000:0000:0000:0000:0000:0000')
+  // );
+    console.log(text,results)
+    return results
 }
 
 async function get_all_routes() {
