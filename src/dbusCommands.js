@@ -4,6 +4,10 @@ const DBUS_BUS_NAME = 'com.nestlabs.WPANTunnelDriver'
 const DBUS_INTERFACE = 'com.nestlabs.WPANTunnelDriver'
 const DBUS_OBJECT_PATH = '/com/nestlabs/WPANTunnelDriver/wfan0'
 let propValues = require('./propValues.js')
+const {
+  parseConnectedDevices,
+  getNumConnectedDevices
+} = require('./parsing.js')
 
 async function sendDBusMessage(command, property, newValue) {
   let methodCall = new dbus.Message({
