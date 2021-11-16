@@ -15,9 +15,6 @@ const {
   getProp,
   getProps,
 } = require('./dbusCommands.js');
-const {
-  parseConnectedDevices
-} = require('./parsing.js')
 
 const TOPOLOGY_UPDATE_INTERVAL = 30;
 
