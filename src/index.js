@@ -15,6 +15,9 @@ const {
   getProp,
   getProps,
 } = require('./dbusCommands.js');
+const {
+  parseConnectedDevices
+} = require('./parsing.js')
 
 const TOPOLOGY_UPDATE_INTERVAL = 30;
 
@@ -245,7 +248,7 @@ function initialize_gw_bringup() {
         }catch(e){
             console.log(e)
         }
-    },500) 
+    },500)
     state.interval_id_ping = setInterval(setup, 1000);
   }
 
