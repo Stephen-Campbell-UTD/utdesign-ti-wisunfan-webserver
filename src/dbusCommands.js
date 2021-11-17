@@ -6,6 +6,8 @@ const DBUS_OBJECT_PATH = '/com/nestlabs/WPANTunnelDriver/wfan0'
 let propValues = require('./propValues.js')
 const {
   parseConnectedDevices,
+  parseDodagRoute,
+  parseMacFilterList,
   getNumConnected
 } = require('./parsing.js')
 

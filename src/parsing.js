@@ -12,17 +12,24 @@ function parseConnectedDevices(text) {
   return connectedDevices
 }
 
-function getNumConnected() {
-  return numConnected
-}
-
 function parseDodagRoute(text) {
   let listArray = text.split('\n');
   // Parse IPs into dodagRoute array
   return listArray.map(line => line.trim()).filter(line => line.length > 0 && line.includes(":") && !line.includes(" "))
 }
 
+function parseMacFilterList(text) {
+  let listArray = text.split('\n')
+  return listArray.map(line => line.trim()).filter(line => line.length > 0)
+}
+
+function getNumConnected() {
+  return numConnected
+}
+
 module.exports = {
   parseConnectedDevices,
+  parseDodagRoute,
+  parseMacFilterList,
   getNumConnected
 }
