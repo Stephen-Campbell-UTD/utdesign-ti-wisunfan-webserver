@@ -28,7 +28,7 @@ module.exports = {
   'Network:Name': '',
   'dodagroutedest': '',
   'dodagroute': '',
-  'numconnected': '',
   'connecteddevices': '',
+  'numconnected': '',
   'IPv6:AllAddresses': ''
 }

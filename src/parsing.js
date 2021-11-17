@@ -1,37 +1,28 @@
 // uses data from propvalues
 // used in dbusCommands, index
-
 let propValues = require('./propValues.js')
-let numConnectedDevices = 0
+let numConnected = 0
 
-function parseConnectedDevices() {
-  console.log('parsing connected devices');
-  devicesArray = propValues['connecteddevices'].split("\n")
-  connectedDevices = ""
-
-  for(let index in devicesArray) {
-    if (devicesArray[index] == "List of connected devices currently in routing table:" || devicesArray[index] == "") {
-        // Do nothing
-    } else if (devicesArray[index].substring(0, 28) == "Number of connected devices:") {
-        tempSplit = devicesArray[index].split(": ")
-        numConnectedDevices = tempSplit[1]
-    } else {
-        connectedDevices += devicesArray[index] + "|"
-    }
-  }
-
-  if(connectedDevices.length >= 1) {
-      connectedDevices = connectedDevices.slice(0, -1);
-  }
-
+function parseConnectedDevices(text) {
+  let listArray = text.split('\n');
+  // Parse IPs into connectedDevices array
+  const connectedDevices = listArray.map(line => line.trim()).filter(line => line.length > 0 && line.includes(":") && !line.includes(" "))
+  // Parse the digits from Number of connected devices
+  numConnected = (listArray.map(line => line.trim()).filter(line => line.includes("Number of connected devices"))).toString().replace(/\D/g, "")
   return connectedDevices
 }
 
-function getNumConnectedDevices() {
-  return numConnectedDevices
+function getNumConnected() {
+  return numConnected
+}
+
+function parseDodagRoute(text) {
+  let listArray = text.split('\n');
+  // Parse IPs into dodagRoute array
+  return listArray.map(line => line.trim()).filter(line => line.length > 0 && line.includes(":") && !line.includes(" "))
 }
 
 module.exports = {
   parseConnectedDevices,
-  getNumConnectedDevices
+  getNumConnected
 }
