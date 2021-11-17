@@ -33,7 +33,22 @@ async function updateProps() {
 }
 
 async function updateProp(property) {
-  propValues[property] = (await sendDBusMessage('GetProp', property, ''))[1]
+  propValue = (await sendDBusMessage('GetProp', property, ''))[1]
+  switch(property) {
+    case 'macfilterlist':
+      propValue = parseMacFilterList(propValue)
+      break
+    case 'dodagroute':
+      propValue = parseDodagRoute(propValue)
+      break
+    case 'connecteddevices':
+      propValue = parseConnectedDevices(propValue)
+      break
+    case 'numconnected':
+      propValue = getNumConnected()
+      break
+  }
+  propValues[property] = propValue
 }
 
 async function setProp(property, newValue) {

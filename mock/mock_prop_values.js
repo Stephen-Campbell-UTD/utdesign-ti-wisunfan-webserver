@@ -45,5 +45,7 @@ module.exports = {
     '2020:abcd:0000:0000:0212:4b00:14f8:14d5'
   ],
   numconnected: '2',
-  'IPv6:AllAddresses': 'fd00:7283:7e00:0: 212:4b00:1e17:79e1; prefix_len = 64; valid_lifetime = 7129; preferred_lifetime = 3529 fe80::212:4b00:1e17: 79e1; prefix_len = 64; valid_lifetime = 4294967295; preferred_lifetime = 4294967295',
+  'IPv6:AllAddresses': [
+    'fd00:7283:7e00:0: 212:4b00:1e17:79e1; prefix_len = 64; valid_lifetime = 7129; preferred_lifetime = 3529 fe80::212:4b00:1e17: 79e1; prefix_len = 64; valid_lifetime = 4294967295; preferred_lifetime = 4294967295'
+  ]
 };
