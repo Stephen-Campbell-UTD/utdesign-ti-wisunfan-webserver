@@ -18,15 +18,32 @@ module.exports = {
   bcinterval: '1020',
   ucchfunction: '0',
   bcchfunction: '0',
-  macfilterlist: '\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n0000000000000000\n',
+  macfilterlist: [
+    '0000000000000000',
+    '0000000000000000',
+    '0000000000000000',
+    '0000000000000000',
+    '0000000000000000',
+    '0000000000000000',
+    '0000000000000000',
+    '0000000000000000',
+    '0000000000000000',
+    '0000000000000000'
+  ],
   macfiltermode: '2',
   'Interface:Up': 'false',
   'Stack:Up': 'false',
   'Network:NodeType': '0 : Border Router',
   'Network:Name': 'Wi-SUN Network',
-  dodagroutedest: 'n2020:abcd:0000:0000:0212:4b00:14f8:2b8f',
-  dodagroute: '\nPath Cost: 1\n2020:abcd:0000:0000:0212:4b00:14f8:2b8f\n2020:abcd:0000:0000:0212:4b00:14f8:14d5\n',
-  connecteddevices: '\nList of connected devices currently in routing table:\n\n2020:abcd:0000:0000:0212:4b00:14f8:2b8f\n2020:abcd:0000:0000:0212:4b00:14f8:14d5\n\nNumber of connected devices: 2\n',
-  numconnected: '\n\nNum Connected Devices:\n\n',
+  dodagroutedest: '2020:abcd:0000:0000:0212:4b00:14f8:2b8f',
+  dodagroute: [
+    '2020:abcd:0000:0000:0212:4b00:14f8:2b8f',
+    '2020:abcd:0000:0000:0212:4b00:14f8:14d5'
+  ],
+  connecteddevices: [
+    '2020:abcd:0000:0000:0212:4b00:14f8:2b8f',
+    '2020:abcd:0000:0000:0212:4b00:14f8:14d5'
+  ],
+  numconnected: '2',
   'IPv6:AllAddresses': 'fd00:7283:7e00:0: 212:4b00:1e17:79e1; prefix_len = 64; valid_lifetime = 7129; preferred_lifetime = 3529 fe80::212:4b00:1e17: 79e1; prefix_len = 64; valid_lifetime = 4294967295; preferred_lifetime = 4294967295',
 };
