@@ -41,6 +41,8 @@ function initialize_ping() {
     if (err) throw err;
   });
 
+  state.topology = { nodes: [], edges: [] },
+
   async function update_topology() {
     console.log('TOPOLOGY', state);
     // if (!state.connected) {
@@ -268,6 +270,7 @@ function initialize_gw_bringup() {
     });
   }
 }
+
 function setup() {
   try {
     //console.log(os.networkInterfaces()[interface])
