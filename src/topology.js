@@ -60,6 +60,12 @@ function format_ip_string(ip) {
   return new_ip_string;
 }
 
+function ip_format_dodag_to_proper(ip_dodag_format){
+    //TODO
+}
+
+
+
 function parse_connected_devices(text) {
   let line_array = text.split('\n');
   const ip_addr_list =
@@ -101,6 +107,15 @@ function parse_dodag_route(text) {
 async function get_all_routes() {
   const connected_devices = await get_prop('connecteddevices');
   const ip_addr_list = parse_connected_devices(connected_devices);
+
+ //Create a union with previous connected devices call (temp fix until wfantund is fixed)
+  const connected_devices_second_call = await get_prop('connecteddevices');
+  parse_connected_devices(connected_devices_second_call).forEach(second_call_ip=>{
+      if(!ip_addr_list.includes(second_call_ip)){
+        ip_addr_list.push(second_call_ip) 
+      }
+  })
+
   //ip address list could be empty if only the br is in the network
   const br_ip = os.networkInterfaces()[process.env.NWP_IFACE][0]['address'];
   const routes = [[br_ip]];
