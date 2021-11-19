@@ -41,7 +41,7 @@ function initialize_ping() {
     if (err) throw err;
   });
 
-  state.topology = { nodes: [], edges: [] },
+  state.topology = { nodes: [], edges: [] }
 
   async function update_topology() {
     console.log('TOPOLOGY', state);
