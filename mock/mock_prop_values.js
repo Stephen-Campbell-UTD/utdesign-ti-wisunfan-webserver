@@ -8,7 +8,8 @@ module.exports = {
   'NCP:Region': '1 : North-America',
   'NCP:ModeID': '2',
   unicastchlist: 'ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:01',
-  broadcastchlist: 'ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:01',
+  broadcastchlist:
+    'ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:01',
   asyncchlist: 'ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:01',
   chspacing: '200 kHz',
   ch0centerfreq: '{902 MHz, 200kHz}',
@@ -28,7 +29,7 @@ module.exports = {
     '0000000000000000',
     '0000000000000000',
     '0000000000000000',
-    '0000000000000000'
+    '0000000000000000',
   ],
   macfiltermode: '2',
   'Interface:Up': 'false',
@@ -38,14 +39,14 @@ module.exports = {
   dodagroutedest: '2020:abcd:0000:0000:0212:4b00:14f8:2b8f',
   dodagroute: [
     '2020:abcd:0000:0000:0212:4b00:14f8:2b8f',
-    '2020:abcd:0000:0000:0212:4b00:14f8:14d5'
+    '2020:abcd:0000:0000:0212:4b00:14f8:14d5',
   ],
   connecteddevices: [
     '2020:abcd:0000:0000:0212:4b00:14f8:2b8f',
-    '2020:abcd:0000:0000:0212:4b00:14f8:14d5'
+    '2020:abcd:0000:0000:0212:4b00:14f8:14d5',
   ],
   numconnected: '2',
   'IPv6:AllAddresses': [
-    'fd00:7283:7e00:0: 212:4b00:1e17:79e1; prefix_len = 64; valid_lifetime = 7129; preferred_lifetime = 3529 fe80::212:4b00:1e17: 79e1; prefix_len = 64; valid_lifetime = 4294967295; preferred_lifetime = 4294967295'
-  ]
+    'fd00:7283:7e00:0: 212:4b00:1e17:79e1; prefix_len = 64; valid_lifetime = 7129; preferred_lifetime = 3529 fe80::212:4b00:1e17: 79e1; prefix_len = 64; valid_lifetime = 4294967295; preferred_lifetime = 4294967295',
+  ],
 };

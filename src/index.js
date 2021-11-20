@@ -31,7 +31,7 @@ const state = {
   topology: { nodes: [], edges: [] },
 };
 
-setInterval(updateProps,30000);
+setInterval(updateProps, 30000);
 
 function initialize_ping() {
   //creation of the csv file
@@ -41,7 +41,7 @@ function initialize_ping() {
     if (err) throw err;
   });
 
-  state.topology = { nodes: [], edges: [] }
+  state.topology = { nodes: [], edges: [] };
 
   async function update_topology() {
     console.log('TOPOLOGY', state);
@@ -187,15 +187,15 @@ function initialize_express() {
   });
   // example query ?property=NCP:TWPower&newValue=10
   app.get('/setProp', async (req, res) => {
-      // console.log(req.query);
-     if(state.connected){
+    // console.log(req.query);
+    if (state.connected) {
       await setProp(req.query.property, req.query.newValue);
-     }
-      // console.log('setProp complete');
-    })
-    // example query ?newValue=2020abcd21124b00&insert=false
-    app.get('/macfilterlist', (req, res) => {
-        if(state.connected){
+    }
+    // console.log('setProp complete');
+  });
+  // example query ?newValue=2020abcd21124b00&insert=false
+  app.get('/macfilterlist', (req, res) => {
+    if (state.connected) {
       if (req.query.insert == 'true') {
         sendDBusMessage(
           'InsertProp',
@@ -209,8 +209,8 @@ function initialize_express() {
           req.query.newValue,
         );
       }
-}
-    });
+    }
+  });
   app.listen(PORT, () => {
     console.log(`Listening on http://localhost:${PORT}`);
   });
@@ -239,15 +239,15 @@ function initialize_gw_bringup() {
   function device_added() {
     console.log('Border router connected');
     start_wpantund();
-    let interval_id =  setInterval(()=>{
-        try{
-            updateProps()
-            state.connected = true;
-            clearInterval(interval_id)
-        }catch(e){
-            console.log(e)
-        }
-    },500)
+    let interval_id = setInterval(() => {
+      try {
+        updateProps();
+        state.connected = true;
+        clearInterval(interval_id);
+      } catch (e) {
+        console.log(e);
+      }
+    }, 500);
     state.interval_id_ping = setInterval(setup, 1000);
   }
 
