@@ -106,53 +106,77 @@ function initialize_express() {
     });
   }
 
+  //returns a promise !!this is async!!
+  function get_ping_result(pingburst_request) {
+    let session = ping.createSession({
+      networkProtocol: ping.NetworkProtocol.IPv4,
+      packetSize: pingburst_request.packet_size,
+      sessionId: process.pid % 65535,
+      timeout: pingburst_requiest.timeout_duration,
+      ttl: 128,
+    });
+    return new Promise((resolve, reject) => {
+      session.pingHost(dest_ip, function (error, _, sent, rcvd) {
+        let ms = rcvd - sent;
+        resolve({
+          start: timestamp(sent),
+          duration: error ? -1 : ms,
+          was_success: !error, //js convert to bool
+        });
+      });
+    });
+  }
+  async function perform_ping(pingburst_request) {
+    ({ start, duration, was_success } = await get_ping_result(
+      pingburst_request,
+    ));
+    const { id, dest_ip, packet_size } = pingburst_request;
+    let ping_record = {
+      id,
+      source_ip: state.source_ip,
+      dest_ip,
+      start,
+      duration,
+      packet_size,
+      was_success,
+    };
+    append_ping_record_to_csv(ping_record);
+    state.pingbursts[pingburst_request.id].records.push(ping_record);
+  }
+
   app.post('/pingbursts', (req, res) => {
     const pingburst_request = req.body;
     const id = state.pingbursts.length;
+    pingburst_request['id'] = id;
     const pingburst = {
       id,
       num_packets_requested: pingburst_request.num_packets,
       records: [],
     };
+    state.pingbursts.push(pingburst);
+
     const n = pingburst_request.num_packets;
     const interval = pingburst_request.interval;
-    const timeout = pingburst_request.timeout;
-    repeat_n_times(
-      n,
-      interval,
-      (dest_ip, size, records) => {
-        let ms;
-        let session = ping.createSession({
-          networkProtocol: ping.NetworkProtocol.IPv4,
-          packetSize: size,
-          sessionId: process.pid % 65535,
-          timeout: timeout,
-          ttl: 128,
-        });
-        session.pingHost(
-          dest_ip,
-          function (error, dest_ip, sent, rcvd) {
-            ms = rcvd - sent;
-            const ping_record = {
-              id,
-              source_ip: state.source_ip,
-              dest_ip,
-              start: timestamp(sent),
-              duration: error ? -1 : ms,
-              packet_size: size,
-              was_success: !error, //js convert to bool
-            };
-            console.log(ping_record, error, rcvd);
-            records.push(ping_record);
-            append_ping_record_to_csv(ping_record);
-          },
-        );
-      },
-      pingburst_request.dest_ip,
-      pingburst_request.packet_size,
-      pingburst.records,
-    );
-    state.pingbursts.push(pingburst);
+    let abort_future_pingbursts = null;
+    if (n === '∞') {
+      abort_future_pingbursts = intervalWithAbort(
+        perform_ping,
+        interval,
+        pingburst_request,
+      );
+    } else {
+      abort_future_pingbursts = repeat_n_times(
+        perform_ping,
+        interval,
+        n,
+        pingburst_request,
+      );
+    }
+    pingburst['abort_pingburst'] = function () {
+      pingburst.was_aborted = true;
+      const success = abort_future_pingbursts();
+      return success;
+    };
     res.json({ id });
   });
 
@@ -160,6 +184,16 @@ function initialize_express() {
     pingburst_id = req.params.id;
     res.json(state.pingbursts[pingburst_id]);
   });
+
+  app.get('/pingbursts/:id/abort', (req, res) => {
+    const pingburst_id = req.params.id;
+    const success = state.pingbursts[pingburst_id].abort_pingburst();
+    res.json({
+      id: pingburst_id,
+      was_abort_success: success,
+    });
+  });
+
   app.get('/pingbursts', (req, res) => {
     res.json(state.pingbursts);
   });

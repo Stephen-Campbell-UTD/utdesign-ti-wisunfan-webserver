@@ -1,7 +1,11 @@
 let express = require('express');
 let cors = require('cors');
 let fs = require('fs');
-const { repeat_n_times, timestamp } = require('../src/utils.js');
+const {
+  repeat_n_times,
+  timestamp,
+  intervalWithAbort,
+} = require('../src/utils.js');
 const mock_topology = require('./mock_topology.js');
 const propValues = require('./mock_prop_values');
 const output_file_path = './output/Ping_Results.csv';
@@ -117,53 +121,70 @@ function initialize_express({ device_added, device_removed }) {
     });
   }
 
+  function get_mock_ping_result(pingburst_request) {
+    random_num = Math.random() - 0.25;
+    let duration = 0;
+    let was_success = true;
+    if (random_num < 0) {
+      duration = -1;
+      was_success = false;
+    } else {
+      duration = Math.floor(random_num * 100);
+      was_success = true;
+    }
+    return { duration, was_success };
+  }
+  function perform_ping(pingburst_request) {
+    ({ duration, was_success } =
+      get_mock_ping_result(pingburst_request));
+    const { id, dest_ip, packet_size } = pingburst_request;
+    let ping_record = {
+      id,
+      source_ip: state.source_ip,
+      dest_ip,
+      start: timestamp(),
+      duration,
+      packet_size,
+      was_success,
+    };
+    append_ping_record_to_csv(ping_record);
+    state.pingbursts[pingburst_request.id].records.push(ping_record);
+  }
+
   app.post('/pingbursts', (req, res) => {
     const pingburst_request = req.body;
     const id = state.pingbursts.length;
+    pingburst_request['id'] = id;
     const pingburst = {
       id,
       num_packets_requested: pingburst_request.num_packets,
       records: [],
+      was_aborted: false,
     };
+    state.pingbursts.push(pingburst);
+
     const n = pingburst_request.num_packets;
     const interval = pingburst_request.interval;
-    const timeout = pingburst_request.timeout;
-    function get_mock_ping_result() {
-      random_num = Math.random() - 0.25;
-      let duration = 0;
-      let was_success = true;
-      if (random_num < 0) {
-        duration = -1;
-        was_success = false;
-      } else {
-        duration = Math.floor(random_num * 100);
-        was_success = true;
-      }
-      return { duration, was_success };
+    let abort_future_pingbursts = null;
+    if (n === '∞') {
+      abort_future_pingbursts = intervalWithAbort(
+        perform_ping,
+        interval,
+        pingburst_request,
+      );
+    } else {
+      abort_future_pingbursts = repeat_n_times(
+        perform_ping,
+        interval,
+        n,
+        pingburst_request,
+      );
     }
-
-    repeat_n_times(
-      n,
-      interval,
-      (dest_ip, size, records) => {
-        ({ duration, was_success } = get_mock_ping_result());
-        ping_record = {
-          id,
-          source_ip: state.source_ip,
-          dest_ip,
-          start: timestamp(),
-          duration,
-          packet_size: size,
-          was_success,
-        };
-        append_ping_record_to_csv(ping_record);
-        records.push(ping_record);
-      },
-      pingburst_request.dest_ip,
-      pingburst_request.packet_size,
-      pingburst.records,
-    );
-    state.pingbursts.push(pingburst);
+    pingburst['abort_pingburst'] = function () {
+      pingburst.was_aborted = true;
+      const success = abort_future_pingbursts();
+      return success;
+    };
     res.json({ id });
   });
 
@@ -171,6 +192,17 @@ function initialize_express({ device_added, device_removed }) {
     pingburst_id = req.params.id;
     res.json(state.pingbursts[pingburst_id]);
   });
+
+  app.get('/pingbursts/:id/abort', (req, res) => {
+    const pingburst_id = req.params.id;
+    console.log(pingburst_id);
+    const success = state.pingbursts[pingburst_id].abort_pingburst();
+    res.json({
+      id: pingburst_id,
+      was_abort_success: success,
+    });
+  });
+
   app.get('/pingbursts', (req, res) => {
     res.json(state.pingbursts);
   });

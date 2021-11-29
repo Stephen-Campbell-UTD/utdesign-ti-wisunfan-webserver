@@ -10,10 +10,27 @@ function timestamp(date) {
   );
 }
 
-function repeat_n_times(n, interval, func, ...args) {
+function repeat_n_times(func, interval, n, ...args) {
+  const timerIds = [];
   for (let i = 0; i < n; i++) {
-    setTimeout(func, interval * i, ...args);
+    const timerId = setTimeout(func, interval * i, ...args);
+    timerIds.push(timerId);
   }
+  //abort function
+  return () => {
+    for (let id of timerIds) {
+      clearTimeout(id);
+    }
+    return true;
+  };
 }
 
-module.exports = { timestamp, repeat_n_times };
+function intervalWithAbort(func, interval, ...args) {
+  const intervalID = setInterval(func, interval, ...args);
+  return () => {
+    clearInterval(intervalID);
+    return true;
+  };
+}
+
+module.exports = { timestamp, repeat_n_times, intervalWithAbort };

@@ -7,7 +7,11 @@ module.exports = {
     { data: { id: '2020::E', rled_state: false, gled_state: false } },
     { data: { id: '2020::F', rled_state: false, gled_state: false } },
     {
-      data: { id: '2020::10', rled_state: false, gled_state: false },
+      data: {
+        id: '2020:0000:0000:0000:0000:0000:0000:0000',
+        rled_state: false,
+        gled_state: false,
+      },
     },
   ],
   edges: [
@@ -49,8 +53,8 @@ module.exports = {
     {
       data: {
         source: '2020::E',
-        target: '2020::10',
-        id: '2020::E->2020::10',
+        target: '2020:0000:0000:0000:0000:0000:0000:0000',
+        id: '2020::E->2020:0000:0000:0000:0000:0000:0000:0000',
       },
     },
   ],
