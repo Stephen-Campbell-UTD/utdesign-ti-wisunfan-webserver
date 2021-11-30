@@ -5,6 +5,7 @@
   "main": "dbus_ping.js",
   "dependencies": {
     "chokidar": "^3.5.2",
+    "coap": "^0.26.0",
     "cors": "^2.8.5",
     "dbus-next": "^0.10.2",
     "express": "^4.17.1",

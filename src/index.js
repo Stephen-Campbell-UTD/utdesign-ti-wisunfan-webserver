@@ -15,6 +15,7 @@ const {
   getProp,
   getProps,
 } = require('./dbusCommands.js');
+const { updateCoapLed, COAP_LED } = require('./coapLED.js');
 
 const TOPOLOGY_UPDATE_INTERVAL = 30;
 
@@ -69,9 +70,24 @@ function initialize_express() {
   app.use(express.json());
   app.use(express.static('./output'));
 
-  app.post('/led', (req, res) => {
+  app.post('/led', async (req, res) => {
     const { ip_address, rled_state, gled_state } = req.body;
-    res.json(true);
+    let target_node = state.topology.nodes.find(
+      (node) => node.data.id === ip_address,
+    );
+    if (target_node === undefined) {
+      res.json({ success: false });
+      return;
+    }
+    try {
+      updateCoapLed(ip_address, COAP_LED.RED, rled_state);
+      updateCoapLed(ip_address, COAP_LED.GREEN, gled_state);
+      target_node.data['rled_state'] = rled_state;
+      target_node.data['gled_state'] = gled_state;
+      res.json({ success: true });
+    } catch (e) {
+      res.json({ success: false });
+    }
   });
 
   app.get('/topology', (req, res) => {

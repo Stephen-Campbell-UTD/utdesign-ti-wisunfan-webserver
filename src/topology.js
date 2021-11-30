@@ -58,8 +58,10 @@ function format_ip_string(ip) {
   return new_ip_string;
 }
 
-function ip_format_dodag_to_proper(ip_dodag_format) {
-  //TODO
+function ip_format_dodag_to_proper(ip) {
+  ip = ip.replace(/(:0000){1,8}/, ':');
+  ip = ip.replace(/:0{1,3}/g, ':');
+  return ip;
 }
 
 function parse_connected_devices(text) {
@@ -68,24 +70,9 @@ function parse_connected_devices(text) {
     .map((line) => line.trim())
     .filter(
       (line) =>
-        line.length > 0 &&
-        line.includes(':') &&
-        // !line.includes("List of connected devices currently in routing table:")) &&
-        !line.includes(' '),
+        line.length > 0 && line.includes(':') && !line.includes(' '),
     );
   return ip_addr_list;
-
-  //   for (let i = 0, l = eachLine.length; i < l; i++) {
-  //     if (
-  //       !eachLine[i].includes(' ') &&
-  //       !!eachLine[i] &&
-  //       eachLine[i][0] != ':'
-  //     ) {
-  //       // add this ip address to the list
-  //       ip_addr_list.push(eachLine[i]);
-  //     }
-  //   }
-  //   return ip_addr_list;
 }
 
 function parse_dodag_route(text) {
@@ -95,15 +82,8 @@ function parse_dodag_route(text) {
     .map((line) => line.trim())
     .filter(
       (line) =>
-        line.length > 0 &&
-        line.includes(':') &&
-        // !line.includes("List of connected devices currently in routing table:")) &&
-        !line.includes(' '),
+        line.length > 0 && line.includes(':') && !line.includes(' '),
     );
-  // let result =  line_list.filter(
-  //     (ipv6_candidate) => !ipv6_candidate.includes('Path') && !ipv6_candidate.includes('0000:0000:0000:0000:0000:0000:0000:0000')
-  // );
-  console.log(text, results);
   return results;
 }
 
@@ -128,7 +108,7 @@ async function get_all_routes() {
     os.networkInterfaces()[process.env.NWP_IFACE][0]['address'];
   const routes = [[br_ip]];
   for (const ip_addr of ip_addr_list) {
-    await set_prop('dodagroutedest', ip_addr);
+    await set_prop('dodagroutedest', format_ip_string(ip_addr));
     const raw_dodag_route = await get_prop('dodagroute');
     const route = parse_dodag_route(raw_dodag_route);
     routes.push(route);
@@ -139,7 +119,7 @@ async function get_all_routes() {
 function routes_to_flattened_graph(routes) {
   let nodes = [];
   //populate nodes
-  console.log(routes);
+  // console.log(routes);
   for (const route of routes) {
     for (const ip_address of route) {
       if (!nodes.some((node) => node.id === ip_address)) {
@@ -172,9 +152,7 @@ function format_route_ips(routes) {
 
 async function get_latest_topology() {
   const routes = await get_all_routes();
-  const formatted_routes = format_route_ips(routes);
-  const flattened_topology =
-    routes_to_flattened_graph(formatted_routes);
+  const flattened_topology = routes_to_flattened_graph(routes);
   return flattened_topology;
 }
 
