@@ -4,7 +4,7 @@ let ping = require('net-ping');
 let os = require('os');
 const fs = require('fs');
 const { exec } = require('child_process');
-const { repeat_n_times, timestamp } = require('./utils.js');
+const { intervalWithAbort, repeat_n_times, timestamp } = require('./utils.js');
 let chokidar = require('chokidar');
 const { get_latest_topology } = require('./topology.js');
 const {
@@ -15,7 +15,7 @@ const {
   getProp,
   getProps,
 } = require('./dbusCommands.js');
-const { updateCoapLed, COAP_LED } = require('./coapLED.js');
+const { updateCoapLed, COAP_LED } = require('./coapLed.js');
 
 const TOPOLOGY_UPDATE_INTERVAL = 30;
 
@@ -45,7 +45,7 @@ function initialize_ping() {
   state.topology = { nodes: [], edges: [] };
 
   async function update_topology() {
-    console.log('TOPOLOGY', state);
+    console.log('TOPOLOGY', JSON.stringify(state));
     // if (!state.connected) {
     //   return;
     // }
@@ -125,15 +125,16 @@ function initialize_express() {
   //returns a promise !!this is async!!
   function get_ping_result(pingburst_request) {
     let session = ping.createSession({
-      networkProtocol: ping.NetworkProtocol.IPv4,
+      networkProtocol: ping.NetworkProtocol.IPv6,
       packetSize: pingburst_request.packet_size,
       sessionId: process.pid % 65535,
-      timeout: pingburst_requiest.timeout_duration,
+      timeout: pingburst_request.timeout_duration,
       ttl: 128,
     });
     return new Promise((resolve, reject) => {
-      session.pingHost(dest_ip, function (error, _, sent, rcvd) {
+      session.pingHost(pingburst_request.dest_ip, function (error, _, sent, rcvd) {
         let ms = rcvd - sent;
+          console.log(pingburst_request.dest_ip, ms)
         resolve({
           start: timestamp(sent),
           duration: error ? -1 : ms,

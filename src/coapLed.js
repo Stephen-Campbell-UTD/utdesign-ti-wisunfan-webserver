@@ -1,16 +1,16 @@
 const { Buffer } = require('buffer');
 
-export const COAP_LED = {
+const COAP_LED = {
   RED: 0x0,
   GREEN: 0x1,
 };
 
-export const COAP_NODE_STATE = {
+const COAP_NODE_STATE = {
   ON: 0x0,
   OFF: 0x1,
 };
 
-export function updateCoapLed(targetIP, ledType, shouldIlluminate) {
+function updateCoapLed(targetIP, ledType, shouldIlluminate) {
   //ledType : COAP_LED
   //shouldIlluminate: bool
 
@@ -58,3 +58,5 @@ export function updateCoapLed(targetIP, ledType, shouldIlluminate) {
     });
   });
 }
+
+module.exports =  {COAP_LED, COAP_NODE_STATE, updateCoapLed}

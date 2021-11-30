@@ -64,6 +64,7 @@ function ip_format_dodag_to_proper(ip) {
   return ip;
 }
 
+
 function parse_connected_devices(text) {
   let line_array = text.split('\n');
   const ip_addr_list = line_array
@@ -83,7 +84,7 @@ function parse_dodag_route(text) {
     .filter(
       (line) =>
         line.length > 0 && line.includes(':') && !line.includes(' '),
-    );
+    ).map(line=>ip_format_dodag_to_proper(line));
   return results;
 }
 
