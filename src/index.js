@@ -45,7 +45,7 @@ function initialize_ping() {
   state.topology = { nodes: [], edges: [] };
 
   async function update_topology() {
-    console.log('TOPOLOGY', JSON.stringify(state));
+    // console.log('TOPOLOGY', JSON.stringify(state));
     // if (!state.connected) {
     //   return;
     // }
@@ -72,6 +72,7 @@ function initialize_express() {
 
   app.post('/led', async (req, res) => {
     const { ip_address, rled_state, gled_state } = req.body;
+  console.log("Get /led",  ip_address, rled_state, gled_state )
     let target_node = state.topology.nodes.find(
       (node) => node.data.id === ip_address,
     );
@@ -86,6 +87,7 @@ function initialize_express() {
       target_node.data['gled_state'] = gled_state;
       res.json({ success: true });
     } catch (e) {
+        console.log(e)
       res.json({ success: false });
     }
   });
@@ -127,14 +129,14 @@ function initialize_express() {
     let session = ping.createSession({
       networkProtocol: ping.NetworkProtocol.IPv6,
       packetSize: pingburst_request.packet_size,
+      retries: 0,
       sessionId: process.pid % 65535,
-      timeout: pingburst_request.timeout_duration,
+      timeout: Number(pingburst_request.timeout),
       ttl: 128,
     });
     return new Promise((resolve, reject) => {
       session.pingHost(pingburst_request.dest_ip, function (error, _, sent, rcvd) {
         let ms = rcvd - sent;
-          console.log(pingburst_request.dest_ip, ms)
         resolve({
           start: timestamp(sent),
           duration: error ? -1 : ms,

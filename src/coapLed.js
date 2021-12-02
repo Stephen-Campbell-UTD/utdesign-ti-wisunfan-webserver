@@ -1,4 +1,5 @@
 const { Buffer } = require('buffer');
+const coap = require('coap')
 
 const COAP_LED = {
   RED: 0x0,
@@ -6,8 +7,8 @@ const COAP_LED = {
 };
 
 const COAP_NODE_STATE = {
-  ON: 0x0,
-  OFF: 0x1,
+  ON: 0x1,
+  OFF: 0x0,
 };
 
 function updateCoapLed(targetIP, ledType, shouldIlluminate) {
@@ -28,7 +29,7 @@ function updateCoapLed(targetIP, ledType, shouldIlluminate) {
     ? COAP_NODE_STATE.ON
     : COAP_NODE_STATE.OFF;
 
-  const payload = Buffer.from[(ledType, targetState)];
+  const payload = Buffer.from([ledType, targetState]);
   putRequest.write(payload);
   putRequest.end();
   currentLedStates = { rled: null, gled: null };
