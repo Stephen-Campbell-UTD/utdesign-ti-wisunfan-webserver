@@ -2,19 +2,23 @@
 
 **Prerequisites**
 
-- Install wfantund: https://github.com/TexasInstruments/ti-wisunfantund
+- Install [Node.js](https://nodejs.org/en/)
 
-- Download and import the TI GUI Composer project (Requires a dev.ti account): https://github.com/Justin-Schmisseur/TI_WebApp_Protoype
+- Install [wfantund](https://github.com/TexasInstruments/ti-wisunfantund) 
 
-- Install webserver dependencies with `npm install`
+- Download and import the [TI GUI Composer project](https://github.com/Justin-Schmisseur/TI_WebApp_Protoype) (Requires a dev.ti account)
+
+**Setup**
+
+Install webserver dependencies with `npm install`
 
 **Get Started**
 
-Start the Server : `npm run wfan`
+Start the server with `npm run wfan`
 
 # Mocking (Cross-Platform)
 
-1. Start the Mock Server
+1. Start the mock server
 
    `npm run mock`
 
