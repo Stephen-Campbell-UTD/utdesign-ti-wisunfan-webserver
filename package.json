@@ -5,6 +5,7 @@
   "main": "dbus_ping.js",
   "dependencies": {
     "chokidar": "^3.5.2",
+    "coap": "^0.26.0",
     "cors": "^2.8.5",
     "dbus-next": "^0.10.2",
     "express": "^4.17.1",
@@ -14,15 +15,20 @@
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "prettier": "^2.4.1"
+    "husky": "^7.0.0",
+    "prettier": "^2.4.1",
+    "pretty-quick": "^3.1.3"
   },
   "scripts": {
     "wpan": "sudo NWP_IFACE=wpan0 node src/index.js",
     "wfan": "sudo NWP_IFACE=wfan0 node src/index.js",
+    "lint": "eslint --fix src/*.js && eslint --fix mock/*.js",
+    "pretty-quick": "pretty-quick",
     "loopback": "node src/index.js",
     "mock": "node mock/mock_server.js",
     "mock_connect": "node mock/mock_client.js mock_connect",
-    "mock_disconnect": "node mock/mock_client.js mock_disconnect"
+    "mock_disconnect": "node mock/mock_client.js mock_disconnect",
+    "prepare": "husky install"
   },
   "author": "",
   "license": "ISC"

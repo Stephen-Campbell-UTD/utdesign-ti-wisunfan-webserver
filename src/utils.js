@@ -16,4 +16,4 @@ function repeat_n_times(n, interval, func, ...args) {
   }
 }
 
-module.exports = { timestamp, repeat_n_times };
+module.exports = {timestamp, repeat_n_times};

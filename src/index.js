@@ -3,10 +3,10 @@ let cors = require('cors');
 let ping = require('net-ping');
 let os = require('os');
 const fs = require('fs');
-const { exec } = require('child_process');
-const { repeat_n_times, timestamp } = require('./utils.js');
+const {exec} = require('child_process');
+const {repeat_n_times, timestamp} = require('./utils.js');
 let chokidar = require('chokidar');
-const { get_latest_topology } = require('./topology.js');
+const {get_latest_topology} = require('./topology.js');
 const {
   sendDBusMessage,
   updateProp,
@@ -28,10 +28,10 @@ const state = {
   interval_id_topology: 0,
   source_ip: 'wfan0 interface not found',
   pingbursts: [],
-  topology: { nodes: [], edges: [] },
+  topology: {nodes: [], edges: []},
 };
 
-setInterval(updateProps,30000);
+setInterval(updateProps, 30000);
 
 function initialize_ping() {
   //creation of the csv file
@@ -41,7 +41,7 @@ function initialize_ping() {
     if (err) throw err;
   });
 
-  state.topology = { nodes: [], edges: [] }
+  state.topology = {nodes: [], edges: []};
 
   async function update_topology() {
     console.log('TOPOLOGY', state);
@@ -55,11 +55,8 @@ function initialize_ping() {
     }
   }
 
-  update_topology().catch((e) => console.log(e));
-  state.interval_id_topology = setInterval(
-    update_topology,
-    TOPOLOGY_UPDATE_INTERVAL * 1000,
-  );
+  update_topology().catch(e => console.log(e));
+  state.interval_id_topology = setInterval(update_topology, TOPOLOGY_UPDATE_INTERVAL * 1000);
 }
 
 function initialize_express() {
@@ -70,7 +67,7 @@ function initialize_express() {
   app.use(express.static('./output'));
 
   app.post('/led', (req, res) => {
-    const { ip_address, rled_state, gled_state } = req.body;
+    const {ip_address, rled_state, gled_state} = req.body;
     res.json(true);
   });
 
@@ -79,26 +76,10 @@ function initialize_express() {
   });
 
   function append_ping_record_to_csv(ping_record) {
-    let {
-      id,
-      source_ip,
-      dest_ip,
-      start,
-      duration,
-      packet_size,
-      was_success,
-    } = ping_record;
+    let {id, source_ip, dest_ip, start, duration, packet_size, was_success} = ping_record;
     start = start.replace(',', '');
     const row_string =
-      [
-        id,
-        source_ip,
-        dest_ip,
-        start,
-        duration,
-        packet_size,
-        was_success,
-      ].join(',') + '\n';
+      [id, source_ip, dest_ip, start, duration, packet_size, was_success].join(',') + '\n';
     fs.appendFile(output_file_path, row_string, function (err) {
       if (err) {
         console.log(err);
@@ -129,31 +110,28 @@ function initialize_express() {
           timeout: timeout,
           ttl: 128,
         });
-        session.pingHost(
-          dest_ip,
-          function (error, dest_ip, sent, rcvd) {
-            ms = rcvd - sent;
-            const ping_record = {
-              id,
-              source_ip: state.source_ip,
-              dest_ip,
-              start: timestamp(sent),
-              duration: error ? -1 : ms,
-              packet_size: size,
-              was_success: !error, //js convert to bool
-            };
-            console.log(ping_record, error, rcvd);
-            records.push(ping_record);
-            append_ping_record_to_csv(ping_record);
-          },
-        );
+        session.pingHost(dest_ip, function (error, dest_ip, sent, rcvd) {
+          ms = rcvd - sent;
+          const ping_record = {
+            id,
+            source_ip: state.source_ip,
+            dest_ip,
+            start: timestamp(sent),
+            duration: error ? -1 : ms,
+            packet_size: size,
+            was_success: !error, //js convert to bool
+          };
+          console.log(ping_record, error, rcvd);
+          records.push(ping_record);
+          append_ping_record_to_csv(ping_record);
+        });
       },
       pingburst_request.dest_ip,
       pingburst_request.packet_size,
-      pingburst.records,
+      pingburst.records
     );
     state.pingbursts.push(pingburst);
-    res.json({ id });
+    res.json({id});
   });
 
   app.get('/pingbursts/:id', (req, res) => {
@@ -187,30 +165,22 @@ function initialize_express() {
   });
   // example query ?property=NCP:TWPower&newValue=10
   app.get('/setProp', async (req, res) => {
-      // console.log(req.query);
-     if(state.connected){
+    // console.log(req.query);
+    if (state.connected) {
       await setProp(req.query.property, req.query.newValue);
-     }
-      // console.log('setProp complete');
-    })
-    // example query ?newValue=2020abcd21124b00&insert=false
-    app.get('/macfilterlist', (req, res) => {
-        if(state.connected){
+    }
+    // console.log('setProp complete');
+  });
+  // example query ?newValue=2020abcd21124b00&insert=false
+  app.get('/macfilterlist', (req, res) => {
+    if (state.connected) {
       if (req.query.insert == 'true') {
-        sendDBusMessage(
-          'InsertProp',
-          'macfilterlist',
-          req.query.newValue,
-        );
+        sendDBusMessage('InsertProp', 'macfilterlist', req.query.newValue);
       } else if (req.query.insert == 'false') {
-        sendDBusMessage(
-          'RemoveProp',
-          'macfilterlist',
-          req.query.newValue,
-        );
+        sendDBusMessage('RemoveProp', 'macfilterlist', req.query.newValue);
       }
-}
-    });
+    }
+  });
   app.listen(PORT, () => {
     console.log(`Listening on http://localhost:${PORT}`);
   });
@@ -239,15 +209,15 @@ function initialize_gw_bringup() {
   function device_added() {
     console.log('Border router connected');
     start_wpantund();
-    let interval_id =  setInterval(()=>{
-        try{
-            updateProps()
-            state.connected = true;
-            clearInterval(interval_id)
-        }catch(e){
-            console.log(e)
-        }
-    },500)
+    let interval_id = setInterval(() => {
+      try {
+        updateProps();
+        state.connected = true;
+        clearInterval(interval_id);
+      } catch (e) {
+        console.log(e);
+      }
+    }, 500);
     state.interval_id_ping = setInterval(setup, 1000);
   }
 
@@ -276,13 +246,12 @@ function setup() {
     //console.log(os.networkInterfaces()[interface])
     console.log(os.networkInterfaces()[interface][0]['address']);
     if (os.networkInterfaces()[interface] !== undefined) {
-      state.source_ip =
-        os.networkInterfaces()[interface][0]['address'];
+      state.source_ip = os.networkInterfaces()[interface][0]['address'];
       initialize_ping();
       state.ready = true;
       clearInterval(state.interval_id_ping);
     }
-  } catch {
+  } catch (error) {
     console.log('wfan0 interface not up');
     //state.ready = false
   }

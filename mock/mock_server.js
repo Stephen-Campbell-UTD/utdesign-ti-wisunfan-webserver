@@ -1,7 +1,7 @@
 let express = require('express');
 let cors = require('cors');
 let fs = require('fs');
-const { repeat_n_times, timestamp } = require('../src/utils.js');
+const {repeat_n_times, timestamp} = require('../src/utils.js');
 const mock_topology = require('./mock_topology.js');
 const propValues = require('./mock_prop_values');
 const output_file_path = './output/Ping_Results.csv';
@@ -14,7 +14,7 @@ const state = {
   interval_id_topology: 0,
   source_ip: 'wfan0 interface not found',
   pingbursts: [],
-  topology: { nodes: [], edges: [] },
+  topology: {nodes: [], edges: []},
 };
 
 function updateProps() {}
@@ -55,7 +55,7 @@ function initialize_ping() {
   // );
 }
 
-function initialize_express({ device_added, device_removed }) {
+function initialize_express({device_added, device_removed}) {
   console.log('[Express] Initialized');
   const app = express();
   const PORT = 8000;
@@ -71,18 +71,16 @@ function initialize_express({ device_added, device_removed }) {
 
   app.post('/led', (req, res) => {
     console.log(`[Express] ${req.method} ${req.path}`);
-    const { ip_address, rled_state, gled_state } = req.body;
-    let target_node = state.topology.nodes.find(
-      (node) => node.data.id === ip_address,
-    );
+    const {ip_address, rled_state, gled_state} = req.body;
+    let target_node = state.topology.nodes.find(node => node.data.id === ip_address);
     if (target_node === undefined) {
-      res.json({ success: false });
+      res.json({success: false});
       return;
     }
     target_node.data['rled_state'] = rled_state;
     target_node.data['gled_state'] = gled_state;
     console.log(target_node);
-    res.json({ success: true });
+    res.json({success: true});
   });
 
   app.get('/topology', (req, res) => {
@@ -90,26 +88,10 @@ function initialize_express({ device_added, device_removed }) {
   });
 
   function append_ping_record_to_csv(ping_record) {
-    let {
-      id,
-      source_ip,
-      dest_ip,
-      start,
-      duration,
-      packet_size,
-      was_success,
-    } = ping_record;
+    let {id, source_ip, dest_ip, start, duration, packet_size, was_success} = ping_record;
     start = start.replace(',', '');
     const row_string =
-      [
-        id,
-        source_ip,
-        dest_ip,
-        start,
-        duration,
-        packet_size,
-        was_success,
-      ].join(',') + '\n';
+      [id, source_ip, dest_ip, start, duration, packet_size, was_success].join(',') + '\n';
     fs.appendFile(output_file_path, row_string, function (err) {
       if (err) {
         console.log(err);
@@ -139,14 +121,14 @@ function initialize_express({ device_added, device_removed }) {
         duration = Math.floor(random_num * 100);
         was_success = true;
       }
-      return { duration, was_success };
+      return {duration, was_success};
     }
 
     repeat_n_times(
       n,
       interval,
       (dest_ip, size, records) => {
-        ({ duration, was_success } = get_mock_ping_result());
+        ({duration, was_success} = get_mock_ping_result());
         ping_record = {
           id,
           source_ip: state.source_ip,
@@ -161,10 +143,10 @@ function initialize_express({ device_added, device_removed }) {
       },
       pingburst_request.dest_ip,
       pingburst_request.packet_size,
-      pingburst.records,
+      pingburst.records
     );
     state.pingbursts.push(pingburst);
-    res.json({ id });
+    res.json({id});
   });
 
   app.get('/pingbursts/:id', (req, res) => {
@@ -245,7 +227,7 @@ function initialize_gw_bringup() {
     console.log('[GW BRINGUP] Border router disconnected');
     state.connected = false;
     state.ready = false;
-    state.topology = { nodes: [], edges: [] };
+    state.topology = {nodes: [], edges: []};
     // clearInterval(state.interval_id_topology);
   }
 
@@ -253,7 +235,7 @@ function initialize_gw_bringup() {
     console.log('[GW BRINGUP] Starting wfantund');
   }
 
-  return { device_added, device_removed };
+  return {device_added, device_removed};
 }
 function setup() {
   state.source_ip = '2020::A';
