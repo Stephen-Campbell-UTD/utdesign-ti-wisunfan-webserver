@@ -1,11 +1,11 @@
 module.exports = {
   nodes: [
-    { data: { id: '2020::A', rled_state: false, gled_state: false } },
-    { data: { id: '2020::C', rled_state: false, gled_state: false } },
-    { data: { id: '2020::B', rled_state: false, gled_state: false } },
-    { data: { id: '2020::D', rled_state: false, gled_state: false } },
-    { data: { id: '2020::E', rled_state: false, gled_state: false } },
-    { data: { id: '2020::F', rled_state: false, gled_state: false } },
+    {data: {id: '2020::A', rled_state: false, gled_state: false}},
+    {data: {id: '2020::C', rled_state: false, gled_state: false}},
+    {data: {id: '2020::B', rled_state: false, gled_state: false}},
+    {data: {id: '2020::D', rled_state: false, gled_state: false}},
+    {data: {id: '2020::E', rled_state: false, gled_state: false}},
+    {data: {id: '2020::F', rled_state: false, gled_state: false}},
     {
       data: {
         id: '2020:0000:0000:0000:0000:0000:0000:0000',

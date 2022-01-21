@@ -8,8 +8,7 @@ module.exports = {
   'NCP:Region': '1 : North-America',
   'NCP:ModeID': '2',
   unicastchlist: 'ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:01',
-  broadcastchlist:
-    'ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:01',
+  broadcastchlist: 'ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:01',
   asyncchlist: 'ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:01',
   chspacing: '200 kHz',
   ch0centerfreq: '{902 MHz, 200kHz}',

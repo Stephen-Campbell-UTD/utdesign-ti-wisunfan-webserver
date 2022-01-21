@@ -22,7 +22,7 @@
   "scripts": {
     "wpan": "sudo NWP_IFACE=wpan0 node src/index.js",
     "wfan": "sudo NWP_IFACE=wfan0 node src/index.js",
-    "lint": "eslint --fix src/*.js",
+    "lint": "eslint --fix src/*.js && eslint --fix mock/*.js",
     "pretty-quick": "pretty-quick",
     "loopback": "node src/index.js",
     "mock": "node mock/mock_server.js",
