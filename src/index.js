@@ -3,10 +3,10 @@ let cors = require('cors');
 let ping = require('net-ping');
 let os = require('os');
 const fs = require('fs');
-const { exec } = require('child_process');
-const { intervalWithAbort, repeat_n_times, timestamp } = require('./utils.js');
+const {exec} = require('child_process');
+const {intervalWithAbort, repeat_n_times, timestamp} = require('./utils.js');
 let chokidar = require('chokidar');
-const { get_latest_topology } = require('./topology.js');
+const {get_latest_topology} = require('./topology.js');
 const {
   sendDBusMessage,
   updateProp,
@@ -15,7 +15,7 @@ const {
   getProp,
   getProps,
 } = require('./dbusCommands.js');
-const { updateCoapLed, COAP_LED } = require('./coapLed.js');
+const {updateCoapLed, COAP_LED} = require('./coapLed.js');
 
 const TOPOLOGY_UPDATE_INTERVAL = 30;
 
@@ -29,7 +29,7 @@ const state = {
   interval_id_topology: 0,
   source_ip: 'wfan0 interface not found',
   pingbursts: [],
-  topology: { nodes: [], edges: [] },
+  topology: {nodes: [], edges: []},
 };
 
 setInterval(updateProps, 30000);
@@ -42,7 +42,7 @@ function initialize_ping() {
     if (err) throw err;
   });
 
-  state.topology = { nodes: [], edges: [] };
+  state.topology = {nodes: [], edges: []};
 
   async function update_topology() {
     // console.log('TOPOLOGY', JSON.stringify(state));
@@ -56,11 +56,8 @@ function initialize_ping() {
     }
   }
 
-  update_topology().catch((e) => console.log(e));
-  state.interval_id_topology = setInterval(
-    update_topology,
-    TOPOLOGY_UPDATE_INTERVAL * 1000,
-  );
+  update_topology().catch(e => console.log(e));
+  state.interval_id_topology = setInterval(update_topology, TOPOLOGY_UPDATE_INTERVAL * 1000);
 }
 
 function initialize_express() {
@@ -71,13 +68,11 @@ function initialize_express() {
   app.use(express.static('./output'));
 
   app.post('/led', async (req, res) => {
-    const { ip_address, rled_state, gled_state } = req.body;
-  console.log("Get /led",  ip_address, rled_state, gled_state )
-    let target_node = state.topology.nodes.find(
-      (node) => node.data.id === ip_address,
-    );
+    const {ip_address, rled_state, gled_state} = req.body;
+    console.log('Get /led', ip_address, rled_state, gled_state);
+    let target_node = state.topology.nodes.find(node => node.data.id === ip_address);
     if (target_node === undefined) {
-      res.json({ success: false });
+      res.json({success: false});
       return;
     }
     try {
@@ -85,10 +80,10 @@ function initialize_express() {
       updateCoapLed(ip_address, COAP_LED.GREEN, gled_state);
       target_node.data['rled_state'] = rled_state;
       target_node.data['gled_state'] = gled_state;
-      res.json({ success: true });
+      res.json({success: true});
     } catch (e) {
-        console.log(e)
-      res.json({ success: false });
+      console.log(e);
+      res.json({success: false});
     }
   });
 
@@ -97,26 +92,10 @@ function initialize_express() {
   });
 
   function append_ping_record_to_csv(ping_record) {
-    let {
-      id,
-      source_ip,
-      dest_ip,
-      start,
-      duration,
-      packet_size,
-      was_success,
-    } = ping_record;
+    let {id, source_ip, dest_ip, start, duration, packet_size, was_success} = ping_record;
     start = start.replace(',', '');
     const row_string =
-      [
-        id,
-        source_ip,
-        dest_ip,
-        start,
-        duration,
-        packet_size,
-        was_success,
-      ].join(',') + '\n';
+      [id, source_ip, dest_ip, start, duration, packet_size, was_success].join(',') + '\n';
     fs.appendFile(output_file_path, row_string, function (err) {
       if (err) {
         console.log(err);
@@ -146,10 +125,8 @@ function initialize_express() {
     });
   }
   async function perform_ping(pingburst_request) {
-    ({ start, duration, was_success } = await get_ping_result(
-      pingburst_request,
-    ));
-    const { id, dest_ip, packet_size } = pingburst_request;
+    ({start, duration, was_success} = await get_ping_result(pingburst_request));
+    const {id, dest_ip, packet_size} = pingburst_request;
     let ping_record = {
       id,
       source_ip: state.source_ip,
@@ -178,25 +155,16 @@ function initialize_express() {
     const interval = pingburst_request.interval;
     let abort_future_pingbursts = null;
     if (n === '∞') {
-      abort_future_pingbursts = intervalWithAbort(
-        perform_ping,
-        interval,
-        pingburst_request,
-      );
+      abort_future_pingbursts = intervalWithAbort(perform_ping, interval, pingburst_request);
     } else {
-      abort_future_pingbursts = repeat_n_times(
-        perform_ping,
-        interval,
-        n,
-        pingburst_request,
-      );
+      abort_future_pingbursts = repeat_n_times(perform_ping, interval, n, pingburst_request);
     }
     pingburst['abort_pingburst'] = function () {
       pingburst.was_aborted = true;
       const success = abort_future_pingbursts();
       return success;
     };
-    res.json({ id });
+    res.json({id});
   });
 
   app.get('/pingbursts/:id', (req, res) => {
@@ -250,17 +218,9 @@ function initialize_express() {
   app.get('/macfilterlist', (req, res) => {
     if (state.connected) {
       if (req.query.insert == 'true') {
-        sendDBusMessage(
-          'InsertProp',
-          'macfilterlist',
-          req.query.newValue,
-        );
+        sendDBusMessage('InsertProp', 'macfilterlist', req.query.newValue);
       } else if (req.query.insert == 'false') {
-        sendDBusMessage(
-          'RemoveProp',
-          'macfilterlist',
-          req.query.newValue,
-        );
+        sendDBusMessage('RemoveProp', 'macfilterlist', req.query.newValue);
       }
     }
   });
@@ -329,13 +289,12 @@ function setup() {
     //console.log(os.networkInterfaces()[interface])
     console.log(os.networkInterfaces()[interface][0]['address']);
     if (os.networkInterfaces()[interface] !== undefined) {
-      state.source_ip =
-        os.networkInterfaces()[interface][0]['address'];
+      state.source_ip = os.networkInterfaces()[interface][0]['address'];
       initialize_ping();
       state.ready = true;
       clearInterval(state.interval_id_ping);
     }
-  } catch {
+  } catch (error) {
     console.log('wfan0 interface not up');
     //state.ready = false
   }

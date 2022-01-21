@@ -33,4 +33,4 @@ function intervalWithAbort(func, interval, ...args) {
   };
 }
 
-module.exports = { timestamp, repeat_n_times, intervalWithAbort };
+module.exports = {timestamp, repeat_n_times, intervalWithAbort};
