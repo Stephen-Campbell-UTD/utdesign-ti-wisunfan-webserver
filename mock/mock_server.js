@@ -1,18 +1,18 @@
 let express = require('express');
 let cors = require('cors');
 let fs = require('fs');
-const {repeat_n_times, timestamp} = require('../src/utils.js');
-const mock_topology = require('./mock_topology.js');
+const {repeatNTimes, timestamp} = require('../src/utils.js');
+const mockTopology = require('./mockTopology.js');
 const propValues = require('./mock_prop_values');
-const output_file_path = './output/Ping_Results.csv';
+const outputFilePath = './output/Ping_Results.csv';
 
 const TOPOLOGY_UPDATE_INTERVAL = 5;
 const state = {
   connected: false, //gw bringup
   ready: false,
-  interval_id_ping: 0,
-  interval_id_topology: 0,
-  source_ip: 'wfan0 interface not found',
+  intervalIDPing: 0,
+  intervalIDTopology: 0,
+  sourceIP: 'wfan0 interface not found',
   pingbursts: [],
   topology: {nodes: [], edges: []},
 };
@@ -34,28 +34,27 @@ function getProp(property) {
   return propValues[property];
 }
 
-function initialize_ping() {
+function initializePing() {
   console.log('[PING] Initialized');
   //creation of the csv file
-  const csv_headers =
-    'ping_burst_id,source_ip,dest_ip,start_time,duration,packet_size,was_success\n';
-  fs.writeFile(output_file_path, csv_headers, function (err) {
+  const csvHeaders = 'ping_burst_id,sourceIP,destIP,start_time,duration,packetSize,wasSuccess\n';
+  fs.writeFile(outputFilePath, csvHeaders, function (err) {
     if (err) throw err;
   });
 
-  state.topology = mock_topology;
+  state.topology = mockTopology;
   console.log('[PING].[MOCK ONLY] Topology Initialized');
-  // async function update_topology() {
-  //   clearInterval(state.interval_id_topology)
+  // async function updateTopology() {
+  //   clearInterval(state.intervalIDTopology)
   // }
-  // update_topology().catch((e) => console.log(e));
-  // state.interval_id_topology = setInterval(
-  //   update_topology,
+  // updateTopology().catch((e) => console.log(e));
+  // state.intervalIDTopology = setInterval(
+  //   updateTopology,
   //   TOPOLOGY_UPDATE_INTERVAL * 1000,
   // );
 }
 
-function initialize_express({device_added, device_removed}) {
+function initializeExpress({deviceAdded, deviceRemoved}) {
   console.log('[Express] Initialized');
   const app = express();
   const PORT = 8000;
@@ -71,15 +70,15 @@ function initialize_express({device_added, device_removed}) {
 
   app.post('/led', (req, res) => {
     console.log(`[Express] ${req.method} ${req.path}`);
-    const {ip_address, rled_state, gled_state} = req.body;
-    let target_node = state.topology.nodes.find(node => node.data.id === ip_address);
-    if (target_node === undefined) {
+    const {ipAddress, rledState, gledState} = req.body;
+    let targetNode = state.topology.nodes.find(node => node.data.id === ipAddress);
+    if (targetNode === undefined) {
       res.json({success: false});
       return;
     }
-    target_node.data['rled_state'] = rled_state;
-    target_node.data['gled_state'] = gled_state;
-    console.log(target_node);
+    targetNode.data['rledState'] = rledState;
+    targetNode.data['gledState'] = gledState;
+    console.log(targetNode);
     res.json({success: true});
   });
 
@@ -87,12 +86,12 @@ function initialize_express({device_added, device_removed}) {
     res.json(state.topology);
   });
 
-  function append_ping_record_to_csv(ping_record) {
-    let {id, source_ip, dest_ip, start, duration, packet_size, was_success} = ping_record;
+  function appendPingRecordToCSV(PingRecord) {
+    let {id, sourceIP, destIP, start, duration, packetSize, wasSuccess} = PingRecord;
     start = start.replace(',', '');
-    const row_string =
-      [id, source_ip, dest_ip, start, duration, packet_size, was_success].join(',') + '\n';
-    fs.appendFile(output_file_path, row_string, function (err) {
+    const rowString =
+      [id, sourceIP, destIP, start, duration, packetSize, wasSuccess].join(',') + '\n';
+    fs.appendFile(outputFilePath, rowString, function (err) {
       if (err) {
         console.log(err);
       }
@@ -100,49 +99,49 @@ function initialize_express({device_added, device_removed}) {
   }
 
   app.post('/pingbursts', (req, res) => {
-    const pingburst_request = req.body;
+    const pingburstRequest = req.body;
     const id = state.pingbursts.length;
     const pingburst = {
       id,
-      num_packets_requested: pingburst_request.num_packets,
+      numPacketsRequested: pingburstRequest.num_packets,
       records: [],
     };
-    const n = pingburst_request.num_packets;
-    const interval = pingburst_request.interval;
-    const timeout = pingburst_request.timeout;
-    function get_mock_ping_result() {
-      random_num = Math.random() - 0.25;
+    const n = pingburstRequest.num_packets;
+    const interval = pingburstRequest.interval;
+    const timeout = pingburstRequest.timeout;
+    function getMockPingResult() {
+      randomNum = Math.random() - 0.25;
       let duration = 0;
-      let was_success = true;
-      if (random_num < 0) {
+      let wasSuccess = true;
+      if (randomNum < 0) {
         duration = -1;
-        was_success = false;
+        wasSuccess = false;
       } else {
-        duration = Math.floor(random_num * 100);
-        was_success = true;
+        duration = Math.floor(randomNum * 100);
+        wasSuccess = true;
       }
-      return {duration, was_success};
+      return {duration, wasSuccess};
     }
 
-    repeat_n_times(
+    repeatNTimes(
       n,
       interval,
-      (dest_ip, size, records) => {
-        ({duration, was_success} = get_mock_ping_result());
-        ping_record = {
+      (destIP, size, records) => {
+        ({duration, wasSuccess} = getMockPingResult());
+        pingRecord = {
           id,
-          source_ip: state.source_ip,
-          dest_ip,
+          sourceIP: state.sourceIP,
+          destIP,
           start: timestamp(),
           duration,
-          packet_size: size,
-          was_success,
+          packetSize: size,
+          wasSuccess,
         };
-        append_ping_record_to_csv(ping_record);
-        records.push(ping_record);
+        appendPingRecordToCSV(PingRecord);
+        records.push(pingRecord);
       },
-      pingburst_request.dest_ip,
-      pingburst_request.packet_size,
+      pingburstRequest.destIP,
+      pingburstRequest.packetSize,
       pingburst.records
     );
     state.pingbursts.push(pingburst);
@@ -150,8 +149,8 @@ function initialize_express({device_added, device_removed}) {
   });
 
   app.get('/pingbursts/:id', (req, res) => {
-    pingburst_id = req.params.id;
-    res.json(state.pingbursts[pingburst_id]);
+    pingburstID = req.params.id;
+    res.json(state.pingbursts[pingburstID]);
   });
   app.get('/pingbursts', (req, res) => {
     res.json(state.pingbursts);
@@ -162,12 +161,12 @@ function initialize_express({device_added, device_removed}) {
 
   //MOCK GW Bringup
   app.get('/mock_connect', (req, res) => {
-    device_added();
+    deviceAdded();
     res.send('CONNECTED');
   });
 
   app.get('/mock_disconnect', (req, res) => {
-    device_removed();
+    deviceRemoved();
     res.send('DISCONNECTED');
   });
 
@@ -214,38 +213,38 @@ function initialize_express({device_added, device_removed}) {
 }
 
 //gw bringup
-function initialize_gw_bringup() {
+function initializeGWBringup() {
   console.log('[GW BRINGUP] Initialized');
-  function device_added() {
+  function deviceAdded() {
     console.log('[GW BRINGUP] Border router connected');
-    start_wfantund();
+    startWfantund();
     state.connected = true;
-    state.interval_id_ping = setInterval(setup, 1000);
+    state.intervalIDPing = setInterval(setup, 1000);
   }
 
-  function device_removed() {
+  function deviceRemoved() {
     console.log('[GW BRINGUP] Border router disconnected');
     state.connected = false;
     state.ready = false;
     state.topology = {nodes: [], edges: []};
-    // clearInterval(state.interval_id_topology);
+    // clearInterval(state.intervalIDTopology);
   }
 
-  function start_wfantund() {
+  function startWfantund() {
     console.log('[GW BRINGUP] Starting wfantund');
   }
 
-  return {device_added, device_removed};
+  return {deviceAdded, deviceRemoved};
 }
 function setup() {
-  state.source_ip = '2020::A';
-  initialize_ping();
+  state.sourceIP = '2020::A';
+  initializePing();
   state.ready = true;
-  clearInterval(state.interval_id_ping);
+  clearInterval(state.intervalIDPing);
 }
 function main() {
-  const callbacks = initialize_gw_bringup();
-  initialize_express(callbacks);
+  const callbacks = initializeGWBringup();
+  initializeExpress(callbacks);
 }
 
 main();

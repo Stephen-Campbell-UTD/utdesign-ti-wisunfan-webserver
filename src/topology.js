@@ -18,50 +18,50 @@ async function sendDBusMessage(command, property, newValue) {
   return (await bus.call(methodCall)).body;
 }
 
-async function set_prop(property, newValue) {
+async function setProp(property, newValue) {
   //console.log("DBUS SET",property, newValue)
   if (typeof property != 'undefined' && newValue != '') {
     await sendDBusMessage('SetProp', property, newValue);
   }
 }
-async function get_prop(property) {
+async function getProp(property) {
   newValue = (await sendDBusMessage('GetProp', property, ''))[1];
   //console.log("DBUS GET",property, typeof newValue,newValue)
   return newValue;
 }
 
-function format_ip_string(ip) {
-  let ip_blocks = ip.split(':');
+function formatIPString(ip) {
+  let ipBlocks = ip.split(':');
   //add zeros form  double colon
   //-1 if no double zero
-  const double_zero_index = ip_blocks.findIndex(val => val.length === 0);
+  const doubleZeroIndex = ipBlocks.findIndex(val => val.length === 0);
 
-  if (double_zero_index !== -1) {
-    const zero_block = '0000';
-    const num_blocks_to_add = 8 - ip_blocks.length + 1; // + 1 bc empty string still in ip blocks
-    const zero_blocks_to_add = [];
-    for (let i = 0; i < num_blocks_to_add; i++) {
-      zero_blocks_to_add.push(zero_block);
+  if (doubleZeroIndex !== -1) {
+    const zeroBlock = '0000';
+    const numBlocksToAdd = 8 - ipBlocks.length + 1; // + 1 bc empty string still in ip blocks
+    const zeroBlocksToAdd = [];
+    for (let i = 0; i < numBlocksToAdd; i++) {
+      zeroBlocksToAdd.push(zeroBlock);
     }
 
-    ip_blocks.splice(double_zero_index, 1, ...zero_blocks_to_add);
+    ipBlocks.splice(doubleZeroIndex, 1, ...zeroBlocksToAdd);
   }
 
   //add leading zeroes
-  ip_blocks = ip_blocks.map(ip_block => {
-    return ip_block.padStart(4, '0');
+  ipBlocks = ipBlocks.map(ipBlock => {
+    return ipBlock.padStart(4, '0');
   });
-  const new_ip_string = ip_blocks.join(':');
-  return new_ip_string;
+  const newIPString = ipBlocks.join(':');
+  return newIPString;
 }
 
-function ip_format_dodag_to_proper(ip_dodag_format) {
+function ipFormatDodagToProper(ipDodagFormat) {
   //TODO
 }
 
-function parse_connected_devices(text) {
-  let line_array = text.split('\n');
-  const ip_addr_list = line_array
+function parseConnectedDevices(text) {
+  let lineArray = text.split('\n');
+  const ipAddrList = lineArray
     .map(line => line.trim())
     .filter(
       line =>
@@ -70,7 +70,7 @@ function parse_connected_devices(text) {
         // !line.includes("List of connected devices currently in routing table:")) &&
         !line.includes(' ')
     );
-  return ip_addr_list;
+  return ipAddrList;
 
   //   for (let i = 0, l = eachLine.length; i < l; i++) {
   //     if (
@@ -79,16 +79,16 @@ function parse_connected_devices(text) {
   //       eachLine[i][0] != ':'
   //     ) {
   //       // add this ip address to the list
-  //       ip_addr_list.push(eachLine[i]);
+  //       ipAddrList.push(eachLine[i]);
   //     }
   //   }
-  //   return ip_addr_list;
+  //   return ipAddrList;
 }
 
-function parse_dodag_route(text) {
-  var line_list = text.split('\n');
+function parseDodagRoute(text) {
+  var listList = text.split('\n');
 
-  const results = line_list
+  const results = listList
     .map(line => line.trim())
     .filter(
       line =>
@@ -97,58 +97,58 @@ function parse_dodag_route(text) {
         // !line.includes("List of connected devices currently in routing table:")) &&
         !line.includes(' ')
     );
-  // let result =  line_list.filter(
+  // let result =  listList.filter(
   //     (ipv6_candidate) => !ipv6_candidate.includes('Path') && !ipv6_candidate.includes('0000:0000:0000:0000:0000:0000:0000:0000')
   // );
   console.log(text, results);
   return results;
 }
 
-async function get_all_routes() {
-  const connected_devices = await get_prop('connecteddevices');
-  const ip_addr_list = parse_connected_devices(connected_devices);
+async function getAllRoutes() {
+  const connectedDevices = await getProp('connecteddevices');
+  const ipAddrList = parseConnectedDevices(connectedDevices);
 
   //Create a union with previous connected devices call (temp fix until wfantund is fixed)
-  const connected_devices_second_call = await get_prop('connecteddevices');
-  parse_connected_devices(connected_devices_second_call).forEach(second_call_ip => {
-    if (!ip_addr_list.includes(second_call_ip)) {
-      ip_addr_list.push(second_call_ip);
+  const connectedDevicesSecondCall = await getProp('connecteddevices');
+  parseConnectedDevices(connectedDevicesSecondCall).forEach(secondCallIP => {
+    if (!ipAddrList.includes(secondCallIP)) {
+      ipAddrList.push(secondCallIP);
     }
   });
 
   //ip address list could be empty if only the br is in the network
-  const br_ip = os.networkInterfaces()[process.env.NWP_IFACE][0]['address'];
-  const routes = [[br_ip]];
-  for (const ip_addr of ip_addr_list) {
-    await set_prop('dodagroutedest', ip_addr);
-    const raw_dodag_route = await get_prop('dodagroute');
-    const route = parse_dodag_route(raw_dodag_route);
+  const brIP = os.networkInterfaces()[process.env.NWP_IFACE][0]['address'];
+  const routes = [[brIP]];
+  for (const ipAddr of ipAddrList) {
+    await setProp('dodagroutedest', ipAddr);
+    const rawDodagRoute = await getProp('dodagroute');
+    const route = parseDodagRoute(rawDodagRoute);
     routes.push(route);
   }
   return routes;
 }
 
-function routes_to_flattened_graph(routes) {
+function routesToFlattenedGraph(routes) {
   let nodes = [];
   //populate nodes
   console.log(routes);
   for (const route of routes) {
-    for (const ip_address of route) {
-      if (!nodes.some(node => node.id === ip_address)) {
-        nodes.push({data: {id: ip_address}});
+    for (const ipAddress of route) {
+      if (!nodes.some(node => node.id === ipAddress)) {
+        nodes.push({data: {id: ipAddress}});
       }
     }
   }
   //populate edges
   let edges = [];
   for (const route of routes) {
-    let num_pairs = route.length - 1;
-    for (let i = 0; i < num_pairs; i++) {
+    let numPairs = route.length - 1;
+    for (let i = 0; i < numPairs; i++) {
       const edge = {};
       edge.source = route[i];
       edge.target = route[i + 1];
       edge.id = `${edge.source}->${edge.target}`;
-      if (!edges.some(other_edge => other_edge.id === edge.id)) {
+      if (!edges.some(otherEdge => otherEdge.id === edge.id)) {
         edges.push({data: edge});
       }
     }
@@ -156,15 +156,15 @@ function routes_to_flattened_graph(routes) {
   return {nodes, edges};
 }
 
-function format_route_ips(routes) {
-  return routes.map(route => route.map(ip => format_ip_string(ip)));
+function formatRouteIPs(routes) {
+  return routes.map(route => route.map(ip => formatIPString(ip)));
 }
 
-async function get_latest_topology() {
-  const routes = await get_all_routes();
-  const formatted_routes = format_route_ips(routes);
-  const flattened_topology = routes_to_flattened_graph(formatted_routes);
-  return flattened_topology;
+async function getLatestTopology() {
+  const routes = await getAllRoutes();
+  const formattedRoutes = formatRouteIPs(routes);
+  const flattenedTopology = routesToFlattenedGraph(formattedRoutes);
+  return flattenedTopology;
 }
 
-module.exports = {get_latest_topology};
+module.exports = {getLatestTopology};
