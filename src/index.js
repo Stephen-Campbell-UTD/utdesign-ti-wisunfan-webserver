@@ -3,10 +3,10 @@ let cors = require('cors');
 let ping = require('net-ping');
 let os = require('os');
 const fs = require('fs');
-const { exec } = require('child_process');
-const { repeat_n_times, timestamp } = require('./utils.js');
+const {exec} = require('child_process');
+const {repeatNTimes, timestamp} = require('./utils.js');
 let chokidar = require('chokidar');
-const { get_latest_topology } = require('./topology.js');
+const {getLatestTopology} = require('./topology.js');
 const {
   sendDBusMessage,
   updateProp,
@@ -19,50 +19,46 @@ const {
 const TOPOLOGY_UPDATE_INTERVAL = 30;
 
 const interface = process.env.NWP_IFACE;
-const output_file_path = './output/Ping_Results.csv';
+const outputFilePath = './output/Ping_Results.csv';
 
 const state = {
   connected: false, //gw bringup
   ready: false,
-  interval_id_ping: 0,
-  interval_id_topology: 0,
-  source_ip: 'wfan0 interface not found',
+  intervalIDPing: 0,
+  intervalIDTopology: 0,
+  sourceIP: 'wfan0 interface not found',
   pingbursts: [],
-  topology: { nodes: [], edges: [] },
+  topology: {nodes: [], edges: []},
 };
 
-setInterval(updateProps,30000);
+setInterval(updateProps, 30000);
 
-function initialize_ping() {
+function initializePing() {
   //creation of the csv file
-  const csv_headers =
-    'ping_burst_id,source_ip,dest_ip,start_time,duration,packet_size,was_success\n';
-  fs.writeFile(output_file_path, csv_headers, function (err) {
+  const csvHeaders = 'ping_burst_id,sourceIP,destIP,start_time,duration,packetSize,wasSuccess\n';
+  fs.writeFile(outputFilePath, csvHeaders, function (err) {
     if (err) throw err;
   });
 
-  state.topology = { nodes: [], edges: [] }
+  state.topology = {nodes: [], edges: []};
 
-  async function update_topology() {
+  async function updateTopology() {
     console.log('TOPOLOGY', state);
     // if (!state.connected) {
     //   return;
     // }
     try {
-      state.topology = await get_latest_topology();
+      state.topology = await getLatestTopology();
     } catch (e) {
       console.error(e);
     }
   }
 
-  update_topology().catch((e) => console.log(e));
-  state.interval_id_topology = setInterval(
-    update_topology,
-    TOPOLOGY_UPDATE_INTERVAL * 1000,
-  );
+  updateTopology().catch(e => console.log(e));
+  state.intervalIDTopology = setInterval(updateTopology, TOPOLOGY_UPDATE_INTERVAL * 1000);
 }
 
-function initialize_express() {
+function initializeExpress() {
   const app = express();
   const PORT = 8000;
   app.use(cors());
@@ -70,7 +66,7 @@ function initialize_express() {
   app.use(express.static('./output'));
 
   app.post('/led', (req, res) => {
-    const { ip_address, rled_state, gled_state } = req.body;
+    const {ipAddress, rledState, gledState} = req.body;
     res.json(true);
   });
 
@@ -78,28 +74,12 @@ function initialize_express() {
     res.json(state.topology);
   });
 
-  function append_ping_record_to_csv(ping_record) {
-    let {
-      id,
-      source_ip,
-      dest_ip,
-      start,
-      duration,
-      packet_size,
-      was_success,
-    } = ping_record;
+  function appendPingRecordToCSV(PingRecord) {
+    let {id, sourceIP, destIP, start, duration, packetSize, wasSuccess} = pingRecord;
     start = start.replace(',', '');
-    const row_string =
-      [
-        id,
-        source_ip,
-        dest_ip,
-        start,
-        duration,
-        packet_size,
-        was_success,
-      ].join(',') + '\n';
-    fs.appendFile(output_file_path, row_string, function (err) {
+    const rowString =
+      [id, sourceIP, destIP, start, duration, packetSize, wasSuccess].join(',') + '\n';
+    fs.appendFile(outputFilePath, rowString, function (err) {
       if (err) {
         console.log(err);
       }
@@ -107,20 +87,20 @@ function initialize_express() {
   }
 
   app.post('/pingbursts', (req, res) => {
-    const pingburst_request = req.body;
+    const pingburstRequest = req.body;
     const id = state.pingbursts.length;
     const pingburst = {
       id,
-      num_packets_requested: pingburst_request.num_packets,
+      numPacketsRequested: pingburstRequest.num_packets,
       records: [],
     };
-    const n = pingburst_request.num_packets;
-    const interval = pingburst_request.interval;
-    const timeout = pingburst_request.timeout;
-    repeat_n_times(
+    const n = pingburstRequest.num_packets;
+    const interval = pingburstRequest.interval;
+    const timeout = pingburstRequest.timeout;
+    repeatNTimes(
       n,
       interval,
-      (dest_ip, size, records) => {
+      (destIP, size, records) => {
         let ms;
         let session = ping.createSession({
           networkProtocol: ping.NetworkProtocol.IPv4,
@@ -129,36 +109,33 @@ function initialize_express() {
           timeout: timeout,
           ttl: 128,
         });
-        session.pingHost(
-          dest_ip,
-          function (error, dest_ip, sent, rcvd) {
-            ms = rcvd - sent;
-            const ping_record = {
-              id,
-              source_ip: state.source_ip,
-              dest_ip,
-              start: timestamp(sent),
-              duration: error ? -1 : ms,
-              packet_size: size,
-              was_success: !error, //js convert to bool
-            };
-            console.log(ping_record, error, rcvd);
-            records.push(ping_record);
-            append_ping_record_to_csv(ping_record);
-          },
-        );
+        session.pingHost(destIP, function (error, destIP, sent, rcvd) {
+          ms = rcvd - sent;
+          const pingRecord = {
+            id,
+            sourceIP: state.sourceIP,
+            destIP,
+            start: timestamp(sent),
+            duration: error ? -1 : ms,
+            packetSize: size,
+            wasSuccess: !error, //js convert to bool
+          };
+          console.log(pingRecord, error, rcvd);
+          records.push(pingRecord);
+          appendPingRecordToCSV(PingRecord);
+        });
       },
-      pingburst_request.dest_ip,
-      pingburst_request.packet_size,
-      pingburst.records,
+      pingburstRequest.destIP,
+      pingburstRequest.packetSize,
+      pingburst.records
     );
     state.pingbursts.push(pingburst);
-    res.json({ id });
+    res.json({id});
   });
 
   app.get('/pingbursts/:id', (req, res) => {
-    pingburst_id = req.params.id;
-    res.json(state.pingbursts[pingburst_id]);
+    pingburstID = req.params.id;
+    res.json(state.pingbursts[pingburstID]);
   });
   app.get('/pingbursts', (req, res) => {
     res.json(state.pingbursts);
@@ -187,80 +164,72 @@ function initialize_express() {
   });
   // example query ?property=NCP:TWPower&newValue=10
   app.get('/setProp', async (req, res) => {
-      // console.log(req.query);
-     if(state.connected){
+    // console.log(req.query);
+    if (state.connected) {
       await setProp(req.query.property, req.query.newValue);
-     }
-      // console.log('setProp complete');
-    })
-    // example query ?newValue=2020abcd21124b00&insert=false
-    app.get('/macfilterlist', (req, res) => {
-        if(state.connected){
+    }
+    // console.log('setProp complete');
+  });
+  // example query ?newValue=2020abcd21124b00&insert=false
+  app.get('/macfilterlist', (req, res) => {
+    if (state.connected) {
       if (req.query.insert == 'true') {
-        sendDBusMessage(
-          'InsertProp',
-          'macfilterlist',
-          req.query.newValue,
-        );
+        sendDBusMessage('InsertProp', 'macfilterlist', req.query.newValue);
       } else if (req.query.insert == 'false') {
-        sendDBusMessage(
-          'RemoveProp',
-          'macfilterlist',
-          req.query.newValue,
-        );
+        sendDBusMessage('RemoveProp', 'macfilterlist', req.query.newValue);
       }
-}
-    });
+    }
+  });
   app.listen(PORT, () => {
     console.log(`Listening on http://localhost:${PORT}`);
   });
 }
 
 //gw bringup
-function initialize_gw_bringup() {
-  const port_path = '/dev/ttyACM0';
-  let watcher = chokidar.watch(port_path, {
+function initializeGWBringup() {
+  const portPath = '/dev/ttyACM0';
+  let watcher = chokidar.watch(portPath, {
     ignored: /^\./,
     persistent: true,
     ignorePermissionErrors: true,
   });
 
   watcher
-    .on('add', device_added)
-    .on('unlink', device_removed)
+    .on('add', deviceAdded)
+    .on('unlink', deviceRemoved)
     .on('error', function (error) {
       console.error(error);
     });
 
-  function flash_connection_status() {
+  function flashConnectionStatus() {
     console.log('Device connected: ' + state.connected);
   }
 
-  function device_added() {
+  function deviceAdded() {
     console.log('Border router connected');
-    start_wpantund();
-    let interval_id =  setInterval(()=>{
-        try{
-            updateProps()
-            state.connected = true;
-            clearInterval(interval_id)
-        }catch(e){
-            console.log(e)
-        }
-    },500)
-    state.interval_id_ping = setInterval(setup, 1000);
+    startWfantund();
+    let intervalID = setInterval(() => {
+      try {
+        updateProps();
+        state.connected = true;
+        clearInterval(intervalID);
+      } catch (e) {
+        console.log(e);
+      }
+    }, 500);
+    state.intervalIDPing = setInterval(setup, 1000);
   }
 
-  function device_removed() {
+  function deviceRemoved() {
     console.log('Border router disconnected');
     state.connected = false;
     state.ready = false;
-    clearInterval(state.interval_id_topology);
+    clearInterval(state.intervalIDTopology);
   }
 
-  function start_wpantund() {
+  function startWfantund() {
     console.log('Starting wfantund');
-    exec('sudo wfantund -s ' + port_path, (error, stdout, stderr) => {
+    exec('sudo wfantund -s ' + portPath, (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
         return;
@@ -276,20 +245,19 @@ function setup() {
     //console.log(os.networkInterfaces()[interface])
     console.log(os.networkInterfaces()[interface][0]['address']);
     if (os.networkInterfaces()[interface] !== undefined) {
-      state.source_ip =
-        os.networkInterfaces()[interface][0]['address'];
-      initialize_ping();
+      state.sourceIP = os.networkInterfaces()[interface][0]['address'];
+      initializePing();
       state.ready = true;
-      clearInterval(state.interval_id_ping);
+      clearInterval(state.intervalIDPing);
     }
-  } catch {
+  } catch (error) {
     console.log('wfan0 interface not up');
     //state.ready = false
   }
 }
 function main() {
-  initialize_gw_bringup();
-  initialize_express();
+  initializeGWBringup();
+  initializeExpress();
 }
 
 main();
