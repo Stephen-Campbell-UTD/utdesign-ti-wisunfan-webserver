@@ -1,5 +1,5 @@
 function timestamp(date) {
-  dateToFormat = date ? date : new Date();
+  let dateToFormat = date ? date : new Date();
   return (
     dateToFormat.toLocaleString('en-US', {
       timeZone: 'America/Chicago',
@@ -15,5 +15,8 @@ function repeatNTimes(n, interval, func, ...args) {
     setTimeout(func, interval * i, ...args);
   }
 }
+function getKeyByValue(object, value) {
+  return Object.keys(object).find(key => object[key] === value);
+}
 
-module.exports = {timestamp, repeatNTimes};
+module.exports = {timestamp, repeatNTimes, getKeyByValue};

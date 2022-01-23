@@ -1,34 +1,7 @@
-let dbus = require('dbus-next');
 const os = require('os');
-const DBUS_BUS_NAME = 'com.nestlabs.WPANTunnelDriver';
-const DBUS_INTERFACE = 'com.nestlabs.WPANTunnelDriver';
-const DBUS_META_OBJECT_PATH = '/com/nestlabs/WPANTunnelDriver';
-const DBUS_OBJECT_PATH = DBUS_META_OBJECT_PATH + '/' + process.env.NWP_IFACE;
-
-async function sendDBusMessage(command, property, newValue) {
-  const bus = dbus.systemBus();
-  let methodCall = new dbus.Message({
-    destination: DBUS_BUS_NAME,
-    path: DBUS_OBJECT_PATH,
-    interface: DBUS_INTERFACE,
-    member: command,
-    signature: 'ss',
-    body: [property, newValue],
-  });
-  return (await bus.call(methodCall)).body;
-}
-
-async function setProp(property, newValue) {
-  //console.log("DBUS SET",property, newValue)
-  if (typeof property != 'undefined' && newValue != '') {
-    await sendDBusMessage('SetProp', property, newValue);
-  }
-}
-async function getProp(property) {
-  newValue = (await sendDBusMessage('GetProp', property, ''))[1];
-  //console.log("DBUS GET",property, typeof newValue,newValue)
-  return newValue;
-}
+const winston = require('winston');
+const {getProp, setProp} = require('./dbusCommands.js');
+const pingLogger = winston.loggers.get('PING');
 
 function formatIPString(ip) {
   let ipBlocks = ip.split(':');
@@ -100,16 +73,16 @@ function parseDodagRoute(text) {
   // let result =  listList.filter(
   //     (ipv6_candidate) => !ipv6_candidate.includes('Path') && !ipv6_candidate.includes('0000:0000:0000:0000:0000:0000:0000:0000')
   // );
-  console.log(text, results);
+  pingLogger.info(`${text}, ${results}`);
   return results;
 }
 
 async function getAllRoutes() {
-  const connectedDevices = await getProp('connecteddevices');
+  const connectedDevices = getProp('connecteddevices');
   const ipAddrList = parseConnectedDevices(connectedDevices);
 
   //Create a union with previous connected devices call (temp fix until wfantund is fixed)
-  const connectedDevicesSecondCall = await getProp('connecteddevices');
+  const connectedDevicesSecondCall = getProp('connecteddevices');
   parseConnectedDevices(connectedDevicesSecondCall).forEach(secondCallIP => {
     if (!ipAddrList.includes(secondCallIP)) {
       ipAddrList.push(secondCallIP);
@@ -121,7 +94,7 @@ async function getAllRoutes() {
   const routes = [[brIP]];
   for (const ipAddr of ipAddrList) {
     await setProp('dodagroutedest', ipAddr);
-    const rawDodagRoute = await getProp('dodagroute');
+    const rawDodagRoute = getProp('dodagroute');
     const route = parseDodagRoute(rawDodagRoute);
     routes.push(route);
   }
@@ -131,7 +104,6 @@ async function getAllRoutes() {
 function routesToFlattenedGraph(routes) {
   let nodes = [];
   //populate nodes
-  console.log(routes);
   for (const route of routes) {
     for (const ipAddress of route) {
       if (!nodes.some(node => node.id === ipAddress)) {

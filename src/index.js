@@ -1,60 +1,78 @@
-let express = require('express');
-let cors = require('cors');
-let ping = require('net-ping');
-let os = require('os');
+const express = require('express');
+const cors = require('cors');
+const ping = require('net-ping');
+const os = require('os');
 const fs = require('fs');
-const {exec} = require('child_process');
+const {spawn} = require('child_process');
 const {repeatNTimes, timestamp} = require('./utils.js');
-let chokidar = require('chokidar');
+const chokidar = require('chokidar');
 const {getLatestTopology} = require('./topology.js');
+
+//this import sets up necessary loggers
 const {
-  sendDBusMessage,
-  updateProp,
-  updateProps,
-  setProp,
-  getProp,
-  getProps,
-} = require('./dbusCommands.js');
+  pingLogger,
+  httpLogger,
+  wfantundLogger,
+  gwBringupLogger,
+  appStateLogger,
+} = require('./logger.js');
+
+const {sendDBusMessage, updateProps, setProp, getProp, getProps} = require('./dbusCommands.js');
+const path = require('path');
 
 const TOPOLOGY_UPDATE_INTERVAL = 30;
 
 const interface = process.env.NWP_IFACE;
-const outputFilePath = './output/Ping_Results.csv';
+const OUTPUT_FILE_PATH = './output/Ping_Results.csv';
+const WFANTUND_PATH = '/usr/local/sbin/wfantund';
 
-const state = {
+/*
+This state variable is simply a wrapper for _state that will log every time a
+value is set.  For example, state.ready = true will have the same effect as
+_state.ready but will also log that state.ready = true
+*/
+const _state = {
   connected: false, //gw bringup
   ready: false,
   intervalIDPing: 0,
   intervalIDTopology: 0,
+  wfantund: null,
   sourceIP: 'wfan0 interface not found',
   pingbursts: [],
   topology: {nodes: [], edges: []},
 };
+const state = new Proxy(_state, {
+  set: (obj, prop, value) => {
+    appStateLogger.info(`${prop} = ${value}`);
+    obj[prop] = value;
+    return true;
+  },
+});
 
 setInterval(updateProps, 30000);
 
 function initializePing() {
   //creation of the csv file
   const csvHeaders = 'ping_burst_id,sourceIP,destIP,start_time,duration,packetSize,wasSuccess\n';
-  fs.writeFile(outputFilePath, csvHeaders, function (err) {
+  const outputDir = path.dirname(OUTPUT_FILE_PATH);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir);
+  }
+  fs.writeFile(OUTPUT_FILE_PATH, csvHeaders, function (err) {
     if (err) throw err;
   });
 
   state.topology = {nodes: [], edges: []};
 
   async function updateTopology() {
-    console.log('TOPOLOGY', state);
-    // if (!state.connected) {
-    //   return;
-    // }
     try {
       state.topology = await getLatestTopology();
     } catch (e) {
-      console.error(e);
+      gwBringupLogger.error(`Update Topology Error : ${e}`);
     }
   }
 
-  updateTopology().catch(e => console.log(e));
+  updateTopology().catch(e => pingLogger.error(e));
   state.intervalIDTopology = setInterval(updateTopology, TOPOLOGY_UPDATE_INTERVAL * 1000);
 }
 
@@ -64,6 +82,10 @@ function initializeExpress() {
   app.use(cors());
   app.use(express.json());
   app.use(express.static('./output'));
+  app.use((req, res, next) => {
+    httpLogger.info(`${req.ip} ${req.method} ${req.originalUrl}`);
+    next();
+  });
 
   app.post('/led', (req, res) => {
     const {ipAddress, rledState, gledState} = req.body;
@@ -74,14 +96,14 @@ function initializeExpress() {
     res.json(state.topology);
   });
 
-  function appendPingRecordToCSV(PingRecord) {
+  function appendPingRecordToCSV(pingRecord) {
     let {id, sourceIP, destIP, start, duration, packetSize, wasSuccess} = pingRecord;
     start = start.replace(',', '');
     const rowString =
       [id, sourceIP, destIP, start, duration, packetSize, wasSuccess].join(',') + '\n';
-    fs.appendFile(outputFilePath, rowString, function (err) {
+    fs.appendFile(OUTPUT_FILE_PATH, rowString, function (err) {
       if (err) {
-        console.log(err);
+        pingLogger.error(err);
       }
     });
   }
@@ -120,9 +142,9 @@ function initializeExpress() {
             packetSize: size,
             wasSuccess: !error, //js convert to bool
           };
-          console.log(pingRecord, error, rcvd);
+          pingLogger.debug(pingRecord, error, rcvd);
           records.push(pingRecord);
-          appendPingRecordToCSV(PingRecord);
+          appendPingRecordToCSV(pingRecord);
         });
       },
       pingburstRequest.destIP,
@@ -134,7 +156,7 @@ function initializeExpress() {
   });
 
   app.get('/pingbursts/:id', (req, res) => {
-    pingburstID = req.params.id;
+    let pingburstID = req.params.id;
     res.json(state.pingbursts[pingburstID]);
   });
   app.get('/pingbursts', (req, res) => {
@@ -145,43 +167,47 @@ function initializeExpress() {
   });
   // example query ?property=NCP:TXPower
   app.get('/getProp', (req, res) => {
-    res.send({
-      [req.query.property]: getProp(req.query.property),
-    });
+    try {
+      const propertyValue = getProp(req.query.property);
+      res.json({
+        [req.query.property]: propertyValue,
+      });
+    } catch (error) {
+      // e.g. req.query.property isn't a valid property
+      res.json({success: false, message: error.message});
+    }
   });
   app.get('/getProps', (req, res) => {
     res.send(getProps());
   });
-  // example query ?property=NCP:TXPower
-  // app.get('/updateProp', (req, res) => {
-  //   updateProp(req.query.property);
-  // });
-  // app.get('/updateProps', (req, res) => {
-  //   updateProps();
-  // });
+
   app.get('/ready', (req, res) => {
     res.json(state.ready);
   });
   // example query ?property=NCP:TWPower&newValue=10
   app.get('/setProp', async (req, res) => {
-    // console.log(req.query);
     if (state.connected) {
-      await setProp(req.query.property, req.query.newValue);
+      try {
+        await setProp(req.query.property, req.query.newValue);
+      } catch (error) {
+        res.json({success: false, message: error.message});
+      }
+    } else {
+      res.json({success: false, message: 'Border Router Not Connected'});
     }
-    // console.log('setProp complete');
   });
   // example query ?newValue=2020abcd21124b00&insert=false
-  app.get('/macfilterlist', (req, res) => {
+  app.get('/macfilterlist', async (req, res) => {
     if (state.connected) {
-      if (req.query.insert == 'true') {
-        sendDBusMessage('InsertProp', 'macfilterlist', req.query.newValue);
-      } else if (req.query.insert == 'false') {
-        sendDBusMessage('RemoveProp', 'macfilterlist', req.query.newValue);
+      if (req.query.insert === 'true') {
+        await sendDBusMessage('InsertProp', 'macfilterlist', req.query.newValue);
+      } else if (req.query.insert === 'false') {
+        await sendDBusMessage('RemoveProp', 'macfilterlist', req.query.newValue);
       }
     }
   });
   app.listen(PORT, () => {
-    console.log(`Listening on http://localhost:${PORT}`);
+    httpLogger.info(`Listening on http://localhost:${PORT}`);
   });
 }
 
@@ -194,67 +220,68 @@ function initializeGWBringup() {
     ignorePermissionErrors: true,
   });
 
-  watcher
-    .on('add', deviceAdded)
-    .on('unlink', deviceRemoved)
-    .on('error', function (error) {
-      console.error(error);
+  function setup() {
+    try {
+      if (interface in os.networkInterfaces()) {
+        state.sourceIP = os.networkInterfaces()[interface][0]['address'];
+        initializePing();
+        state.ready = true;
+        clearInterval(state.intervalIDPing);
+      }
+    } catch (error) {
+      gwBringupLogger.info('wfan0 interface not up');
+    }
+  }
+  function startWfantund() {
+    gwBringupLogger.info('Starting wfantund');
+    state.wfantund = spawn(WFANTUND_PATH, ['-s', portPath]);
+    state.wfantund.stdout.on('data', data => {
+      wfantundLogger.debug(`stdout: ${data}`);
     });
-
-  function flashConnectionStatus() {
-    console.log('Device connected: ' + state.connected);
+    state.wfantund.stderr.on('data', data => {
+      wfantundLogger.info(`stderr: ${data}`);
+    });
+    state.wfantund.on('close', code => {
+      state.wfantund = null;
+      if (code === 0) {
+        wfantundLogger.info(`Exited Successfully`);
+      } else {
+        wfantundLogger.error(`Exited with code ${code}`);
+      }
+    });
   }
 
   function deviceAdded() {
-    console.log('Border router connected');
+    gwBringupLogger.info('Border router connected');
     startWfantund();
     let intervalID = setInterval(() => {
-      try {
-        updateProps();
-        state.connected = true;
-        clearInterval(intervalID);
-      } catch (e) {
-        console.log(e);
-      }
+      updateProps();
+      state.connected = true;
+      clearInterval(intervalID);
     }, 500);
     state.intervalIDPing = setInterval(setup, 1000);
   }
 
   function deviceRemoved() {
-    console.log('Border router disconnected');
+    gwBringupLogger.info('Border router disconnected');
     state.connected = false;
     state.ready = false;
     clearInterval(state.intervalIDTopology);
   }
 
-  function startWfantund() {
-    console.log('Starting wfantund');
-    exec('sudo wfantund -s ' + portPath, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`exec error: ${error}`);
-        return;
-      }
-      console.log(`stdout: ${stdout}`);
-      console.error(`stderr: ${stderr}`);
+  watcher
+    .on('add', deviceAdded)
+    .on('unlink', deviceRemoved)
+    .on('error', function (error) {
+      gwBringupLogger.error(error);
     });
-  }
 }
 
-function setup() {
-  try {
-    //console.log(os.networkInterfaces()[interface])
-    console.log(os.networkInterfaces()[interface][0]['address']);
-    if (os.networkInterfaces()[interface] !== undefined) {
-      state.sourceIP = os.networkInterfaces()[interface][0]['address'];
-      initializePing();
-      state.ready = true;
-      clearInterval(state.intervalIDPing);
-    }
-  } catch (error) {
-    console.log('wfan0 interface not up');
-    //state.ready = false
+process.on('exit', code => {
+  if (state.wfantund !== null) {
+    state.wfantund.kill('SIGHUP');
   }
-}
+});
 function main() {
   initializeGWBringup();
   initializeExpress();
