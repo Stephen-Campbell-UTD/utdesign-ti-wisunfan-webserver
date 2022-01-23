@@ -21,7 +21,7 @@ function updateProps() {}
 function updateProp(property) {}
 
 function setProp(property, newValue) {
-  if (typeof property != 'undefined' && newValue != '') {
+  if (typeof property !== 'undefined' && newValue !== '') {
     propValues[property] = newValue;
   }
 }
@@ -110,7 +110,7 @@ function initializeExpress({deviceAdded, deviceRemoved}) {
     const interval = pingburstRequest.interval;
     const timeout = pingburstRequest.timeout;
     function getMockPingResult() {
-      randomNum = Math.random() - 0.25;
+      let randomNum = Math.random() - 0.25;
       let duration = 0;
       let wasSuccess = true;
       if (randomNum < 0) {
@@ -127,8 +127,8 @@ function initializeExpress({deviceAdded, deviceRemoved}) {
       n,
       interval,
       (destIP, size, records) => {
-        ({duration, wasSuccess} = getMockPingResult());
-        pingRecord = {
+        let {duration, wasSuccess} = getMockPingResult();
+        let pingRecord = {
           id,
           sourceIP: state.sourceIP,
           destIP,
@@ -137,7 +137,7 @@ function initializeExpress({deviceAdded, deviceRemoved}) {
           packetSize: size,
           wasSuccess,
         };
-        appendPingRecordToCSV(PingRecord);
+        appendPingRecordToCSV(pingRecord);
         records.push(pingRecord);
       },
       pingburstRequest.destIP,
@@ -149,7 +149,7 @@ function initializeExpress({deviceAdded, deviceRemoved}) {
   });
 
   app.get('/pingbursts/:id', (req, res) => {
-    pingburstID = req.params.id;
+    let pingburstID = req.params.id;
     res.json(state.pingbursts[pingburstID]);
   });
   app.get('/pingbursts', (req, res) => {
@@ -199,9 +199,9 @@ function initializeExpress({deviceAdded, deviceRemoved}) {
   // example query ?newValue=2020abcd21124b00&insert=false
   app.get('/macfilterlist', (req, res) => {
     //TODO properly mock macfilterlist ... not sure of correct output
-    if (req.query.insert == 'true') {
+    if (req.query.insert === 'true') {
       //push new mac
-    } else if (req.query.insert == 'false') {
+    } else if (req.query.insert === 'false') {
       //remove mac
     }
     res.send('mac change success');
@@ -210,6 +210,16 @@ function initializeExpress({deviceAdded, deviceRemoved}) {
   app.listen(PORT, () => {
     console.log(`[Express] Listening on http://localhost:${PORT}`);
   });
+}
+function startWfantund() {
+  console.log('[GW BRINGUP] Starting wfantund');
+}
+
+function setup() {
+  state.sourceIP = '2020::A';
+  initializePing();
+  state.ready = true;
+  clearInterval(state.intervalIDPing);
 }
 
 //gw bringup
@@ -230,17 +240,7 @@ function initializeGWBringup() {
     // clearInterval(state.intervalIDTopology);
   }
 
-  function startWfantund() {
-    console.log('[GW BRINGUP] Starting wfantund');
-  }
-
   return {deviceAdded, deviceRemoved};
-}
-function setup() {
-  state.sourceIP = '2020::A';
-  initializePing();
-  state.ready = true;
-  clearInterval(state.intervalIDPing);
 }
 function main() {
   const callbacks = initializeGWBringup();
