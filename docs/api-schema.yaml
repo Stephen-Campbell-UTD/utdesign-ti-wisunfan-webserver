@@ -1,0 +1,420 @@
+openapi: '3.0.2'
+info:
+  title: UT Design TI Wi-SUN FAN Webserver API
+  description: API to monitor and configure a Wi-SUN Network
+  version: '1.0'
+servers:
+  - url: http://localhost:8000
+
+components:
+  schemas:
+    Node:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          description: 'IP address of corresponding node'
+          type: string
+    Edge:
+      type: object
+      required:
+        - id
+        - source
+        - target
+      properties:
+        id:
+          type: string
+        source:
+          description: 'IP address of corresponding source node'
+          type: string
+        target:
+          description: 'IP address of corresponding target node'
+          type: string
+    Pingburst:
+      type: object
+      required:
+        - id
+        - wasAborted
+        - numPacketsRequested
+        - records
+      properties:
+        id:
+          type: number
+        wasAborted:
+          type: boolean
+        numPacketsRequested:
+          type: number
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/PingRecord'
+    PingRecord:
+      type: object
+      required:
+        - sourceIP
+        - destIP
+        - start
+        - duration
+        - packetSize
+        - wasSuccess
+      properties:
+        sourceIP:
+          type: string
+        destIP:
+          type: string
+        start:
+          type: string
+        duration:
+          type: string
+        packetSize:
+          type: string
+        wasSuccess:
+          type: boolean
+    NCPProperty:
+      type: string
+      enum:
+        - NCP:ProtocolVersion
+        - NCP:Version
+        - NCP:InterfaceType
+        - NCP:HardwareAddress
+        - NCP:CCAThreshold
+        - NCP:TXPower
+        - NCP:Region
+        - NCP:ModeID
+        - unicastchlist
+        - broadcastchlist
+        - asyncchlist
+        - chspacing
+        - ch0centerfreq
+        - Network:Panid
+        - bcdwellinterval
+        - ucdwellinterval
+        - bcinterval
+        - ucchfunction
+        - bcchfunction
+        - macfilterlist
+        - macfiltermode
+        - Interface:Up
+        - Stack:Up
+        - Network:NodeType
+        - Network:Name
+        - dodagroutedest
+        - dodagroute
+        - connecteddevices
+        - numconnected
+        - IPv6:AllAddresses
+    NCPProperties:
+      type: object
+      required:
+        - NCP:ProtocolVersion
+        - NCP:Version
+        - NCP:InterfaceType
+        - NCP:HardwareAddress
+        - NCP:CCAThreshold
+        - NCP:TXPower
+        - NCP:Region
+        - NCP:ModeID
+        - unicastchlist
+        - broadcastchlist
+        - asyncchlist
+        - chspacing
+        - ch0centerfreq
+        - Network:Panid
+        - bcdwellinterval
+        - ucdwellinterval
+        - bcinterval
+        - ucchfunction
+        - bcchfunction
+        - macfilterlist
+        - macfiltermode
+        - Interface:Up
+        - Stack:Up
+        - Network:NodeType
+        - Network:Name
+        - dodagroutedest
+        - dodagroute
+        - connecteddevices
+        - numconnected
+        - IPv6:AllAddresses
+      properties:
+        NCP:ProtocolVersion:
+          type: string
+        NCP:Version:
+          type: string
+        NCP:InterfaceType:
+          type: string
+        NCP:HardwareAddress:
+          type: string
+        NCP:CCAThreshold:
+          type: string
+        NCP:TXPower:
+          type: string
+        NCP:Region:
+          type: string
+        NCP:ModeID:
+          type: string
+        unicastchlist:
+          type: string
+        broadcastchlist:
+          type: string
+        asyncchlist:
+          type: string
+        chspacing:
+          type: string
+        ch0centerfreq:
+          type: string
+        Network:Panid:
+          type: string
+        bcdwellinterval:
+          type: string
+        ucdwellinterval:
+          type: string
+        bcinterval:
+          type: string
+        ucchfunction:
+          type: string
+        bcchfunction:
+          type: string
+        macfilterlist:
+          type: string
+        macfiltermode:
+          type: string
+        Interface:Up:
+          type: boolean
+        Stack:Up:
+          type: boolean
+        Network:NodeType:
+          type: string
+        Network:Name:
+          type: string
+        dodagroutedest:
+          type: string
+        dodagroute:
+          type: array
+          items:
+            type: string
+        connecteddevices:
+          type: array
+          items:
+            type: string
+        numconnected:
+          type: integer
+        IPv6:AllAddresses:
+          type: array
+          items:
+            type: string
+
+paths:
+  /setProp:
+    get:
+      parameters:
+        - name: property
+          in: query
+          description: Determines which property is to be set
+          schema:
+            $ref: '#/components/schemas/NCPProperty'
+        - name: newValue
+          in: query
+          description: Determines the value to be set
+          schema:
+            oneOf:
+              - type: string
+              - type: integer
+      responses:
+        '200':
+          description: 'Successfully set Property'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /getProps:
+    get:
+      responses:
+        '200':
+          description: 'Retreive current state of NCP properties'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NCPProperties'
+  /getProp:
+    get:
+      parameters:
+        - name: property
+          in: query
+          description: Determines which property is to be set
+          schema:
+            $ref: '#/components/schemas/NCPProperty'
+      responses:
+        '200':
+          description: 'Successfully got ncp property'
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  anyOf:
+                    - type: string
+                    - type: integer
+
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /topology:
+    get:
+      description: Returns cytoscape style graph representing network nodes
+      responses:
+        '200':
+          description: Successfully return cytoscape style graph
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - nodes
+                  - edges
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Node'
+                  edges:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Edge'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /pingbursts:
+    get:
+      description: 'Retreive all pingbursts in server memory'
+      responses:
+        '200':
+          description: 'Successfully retreived all pingbursts in server memory'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pingburst'
+    post:
+      description: 'Create a new pingburst'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - destIP
+                - numPackets
+                - packetSize
+                - timeout
+                - interval
+              properties:
+                destIP:
+                  type: string
+                numPackets:
+                  type: number
+                packetSize:
+                  type: number
+                timeout:
+                  type: number
+                interval:
+                  type: number
+      responses:
+        '200':
+          description: 'Succesfully Created Pingburst'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /pingbursts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: number
+
+    get:
+      description: 'Retreive pingburst in corresponding to id'
+      responses:
+        '200':
+          description: 'Successfully return pingburst'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pingburst'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /pingbursts/{id}/abort:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: number
+
+    get:
+      description: 'Abort pingburst corresponding to id'
+      responses:
+        '200':
+          description: 'Successfully aborted pingburst'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: number
+
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
