@@ -1,10 +1,10 @@
 let express = require('express');
 let cors = require('cors');
 let fs = require('fs');
-const {repeatNTimes, timestamp} = require('../src/utils.js');
+const {repeatNTimes, timestamp, intervalWithAbort} = require('../src/utils.js');
 const mockTopology = require('./mockTopology.js');
-const propValues = require('./mock_prop_values');
-const outputFilePath = './output/Ping_Results.csv';
+const propValues = require('./mockPropValues');
+const outputFilePath = `${__dirname}/PingResults.csv`;
 
 const TOPOLOGY_UPDATE_INTERVAL = 5;
 const state = {
@@ -37,7 +37,7 @@ function getProp(property) {
 function initializePing() {
   console.log('[PING] Initialized');
   //creation of the csv file
-  const csvHeaders = 'ping_burst_id,sourceIP,destIP,start_time,duration,packetSize,wasSuccess\n';
+  const csvHeaders = 'pingBurstId,sourceIP,destIP,startTime,duration,packetSize,wasSuccess\n';
   fs.writeFile(outputFilePath, csvHeaders, function (err) {
     if (err) throw err;
   });
@@ -60,7 +60,7 @@ function initializeExpress({deviceAdded, deviceRemoved}) {
   const PORT = 8000;
   app.use(cors());
   app.use(express.json());
-  app.use(express.static('./output'));
+  app.use(express.static(__dirname));
 
   function logger(req, res, next) {
     // console.log(`[Express] ${req.method} ${req.path}`);
@@ -98,54 +98,71 @@ function initializeExpress({deviceAdded, deviceRemoved}) {
     });
   }
 
+  function getMockPingResult() {
+    let randomNum = Math.random() - 0.25;
+    let duration = 0;
+    let wasSuccess = true;
+    if (randomNum < 0) {
+      duration = -1;
+      wasSuccess = false;
+    } else {
+      duration = Math.floor(randomNum * 100);
+      wasSuccess = true;
+    }
+    return {duration, wasSuccess};
+  }
+
+  function performPing(pingburstRequest) {
+    const {duration, wasSuccess} = getMockPingResult(pingburstRequest);
+    const {id, destIP, packetSize} = pingburstRequest;
+    let pingRecord = {
+      id,
+      sourceIP: state.sourceIP,
+      destIP,
+      start: timestamp(),
+      duration,
+      packetSize,
+      wasSuccess,
+    };
+    appendPingRecordToCSV(pingRecord);
+    state.pingbursts[pingburstRequest.id].records.push(pingRecord);
+  }
   app.post('/pingbursts', (req, res) => {
     const pingburstRequest = req.body;
     const id = state.pingbursts.length;
+    pingburstRequest['id'] = id;
     const pingburst = {
       id,
-      numPacketsRequested: pingburstRequest.num_packets,
+      numPacketsRequested: pingburstRequest.numPackets,
       records: [],
+      wasAborted: false,
     };
-    const n = pingburstRequest.num_packets;
-    const interval = pingburstRequest.interval;
-    const timeout = pingburstRequest.timeout;
-    function getMockPingResult() {
-      let randomNum = Math.random() - 0.25;
-      let duration = 0;
-      let wasSuccess = true;
-      if (randomNum < 0) {
-        duration = -1;
-        wasSuccess = false;
-      } else {
-        duration = Math.floor(randomNum * 100);
-        wasSuccess = true;
-      }
-      return {duration, wasSuccess};
-    }
-
-    repeatNTimes(
-      n,
-      interval,
-      (destIP, size, records) => {
-        let {duration, wasSuccess} = getMockPingResult();
-        let pingRecord = {
-          id,
-          sourceIP: state.sourceIP,
-          destIP,
-          start: timestamp(),
-          duration,
-          packetSize: size,
-          wasSuccess,
-        };
-        appendPingRecordToCSV(pingRecord);
-        records.push(pingRecord);
-      },
-      pingburstRequest.destIP,
-      pingburstRequest.packetSize,
-      pingburst.records
-    );
     state.pingbursts.push(pingburst);
+
+    const n = pingburstRequest.numPackets;
+    const interval = pingburstRequest.interval;
+    let abortFuturePingbursts = null;
+    if (n === '∞') {
+      abortFuturePingbursts = intervalWithAbort(performPing, interval, pingburstRequest);
+    } else {
+      abortFuturePingbursts = repeatNTimes(performPing, interval, n, pingburstRequest);
+    }
+    pingburst['abortPingburst'] = function () {
+      pingburst.wasAborted = true;
+      const success = abortFuturePingbursts();
+      return success;
+    };
     res.json({id});
+  });
+
+  app.get('/pingbursts/:id/abort', (req, res) => {
+    const pingburstID = req.params.id;
+    console.log(pingburstID);
+    const success = state.pingbursts[pingburstID].abortPingburst();
+    res.json({
+      id: pingburstID,
+      wasAbortSuccess: success,
+    });
   });
 
   app.get('/pingbursts/:id', (req, res) => {
@@ -155,17 +172,17 @@ function initializeExpress({deviceAdded, deviceRemoved}) {
   app.get('/pingbursts', (req, res) => {
     res.json(state.pingbursts);
   });
-  app.get('/gw_bringup', (req, res) => {
+  app.get('/connected', (req, res) => {
     res.json(state.connected);
   });
 
   //MOCK GW Bringup
-  app.get('/mock_connect', (req, res) => {
+  app.get('/mockConnect', (req, res) => {
     deviceAdded();
     res.send('CONNECTED');
   });
 
-  app.get('/mock_disconnect', (req, res) => {
+  app.get('/mockDisconnect', (req, res) => {
     deviceRemoved();
     res.send('DISCONNECTED');
   });

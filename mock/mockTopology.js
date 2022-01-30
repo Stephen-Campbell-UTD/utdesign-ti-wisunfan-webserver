@@ -1,13 +1,17 @@
 module.exports = {
   nodes: [
-    {data: {id: '2020::A', rledState: false, gledState: false}},
-    {data: {id: '2020::C', rledState: false, gledState: false}},
-    {data: {id: '2020::B', rledState: false, gledState: false}},
-    {data: {id: '2020::D', rledState: false, gledState: false}},
-    {data: {id: '2020::E', rledState: false, gledState: false}},
-    {data: {id: '2020::F', rledState: false, gledState: false}},
+    {data: {id: '2020::A', rLEDState: false, gLEDState: false}},
+    {data: {id: '2020::C', rLEDState: false, gLEDState: false}},
+    {data: {id: '2020::B', rLEDState: false, gLEDState: false}},
+    {data: {id: '2020::D', rLEDState: false, gLEDState: false}},
+    {data: {id: '2020::E', rLEDState: false, gLEDState: false}},
+    {data: {id: '2020::F', rLEDState: false, gLEDState: false}},
     {
-      data: {id: '2020::10', rledState: false, gledState: false},
+      data: {
+        id: '2020:0000:0000:0000:0000:0000:0000:0000',
+        rLEDState: false,
+        gLEDState: false,
+      },
     },
   ],
   edges: [
@@ -49,8 +53,8 @@ module.exports = {
     {
       data: {
         source: '2020::E',
-        target: '2020::10',
-        id: '2020::E->2020::10',
+        target: '2020:0000:0000:0000:0000:0000:0000:0000',
+        id: '2020::E->2020:0000:0000:0000:0000:0000:0000:0000',
       },
     },
   ],

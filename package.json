@@ -26,9 +26,9 @@
     "lint": "eslint --fix src/*.js && eslint --fix mock/*.js",
     "pretty-quick": "pretty-quick",
     "loopback": "node src/index.js",
-    "mock": "node mock/mock_server.js",
-    "mock_connect": "node mock/mock_client.js mock_connect",
-    "mock_disconnect": "node mock/mock_client.js mock_disconnect",
+    "mock": "node mock/mockServer.js",
+    "mockConnect": "node mock/mockClient.js mockConnect",
+    "mockDisconnect": "node mock/mockClient.js mockDisconnect",
     "prepare": "husky install"
   },
   "author": "",

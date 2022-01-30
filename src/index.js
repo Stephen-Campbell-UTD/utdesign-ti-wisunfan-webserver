@@ -4,9 +4,10 @@ const ping = require('net-ping');
 const os = require('os');
 const fs = require('fs');
 const {spawn} = require('child_process');
-const {repeatNTimes, timestamp} = require('./utils.js');
+const {repeatNTimes, timestamp, intervalWithAbort} = require('./utils.js');
 const chokidar = require('chokidar');
-const {getLatestTopology} = require('./topology.js');
+const {topology, updateTopology} = require('./topology.js');
+const propValues = require('./propValues.js');
 
 //this import sets up necessary loggers
 const {
@@ -17,14 +18,22 @@ const {
   appStateLogger,
 } = require('./logger.js');
 
-const {sendDBusMessage, updateProps, setProp, getProp, getProps} = require('./dbusCommands.js');
+const {sendDBusMessage, setProp, getProp, updateProp, getProps} = require('./dbusCommands.js');
 const path = require('path');
 
-const TOPOLOGY_UPDATE_INTERVAL = 30;
+// const TOPOLOGY_UPDATE_INTERVAL = 30;
 
 const interface = process.env.NWP_IFACE;
-const OUTPUT_FILE_PATH = './output/Ping_Results.csv';
+const OUTPUT_FILE_PATH = './output/PingResults.csv';
 const WFANTUND_PATH = '/usr/local/sbin/wfantund';
+
+let session = ping.createSession({
+  networkProtocol: ping.NetworkProtocol.IPv6,
+  packetSize: 50,
+  sessionId: process.pid % 65535,
+  timeout: 1000,
+  ttl: 128,
+});
 
 /*
 This state variable is simply a wrapper for _state that will log every time a
@@ -39,7 +48,6 @@ const _state = {
   wfantund: null,
   sourceIP: 'wfan0 interface not found',
   pingbursts: [],
-  topology: {nodes: [], edges: []},
 };
 const state = new Proxy(_state, {
   set: (obj, prop, value) => {
@@ -49,11 +57,9 @@ const state = new Proxy(_state, {
   },
 });
 
-setInterval(updateProps, 30000);
-
 function initializePing() {
   //creation of the csv file
-  const csvHeaders = 'ping_burst_id,sourceIP,destIP,start_time,duration,packetSize,wasSuccess\n';
+  const csvHeaders = 'pingburstID,sourceIP,destIP,start_time,duration,packetSize,wasSuccess\n';
   const outputDir = path.dirname(OUTPUT_FILE_PATH);
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir);
@@ -61,20 +67,23 @@ function initializePing() {
   fs.writeFile(OUTPUT_FILE_PATH, csvHeaders, function (err) {
     if (err) throw err;
   });
+}
 
-  state.topology = {nodes: [], edges: []};
-
-  async function updateTopology() {
+async function updateProps() {
+  for (const property in propValues) {
     try {
-      state.topology = await getLatestTopology();
-    } catch (e) {
-      gwBringupLogger.error(`Update Topology Error : ${e}`);
+      await updateProp(property);
+    } catch (error) {
+      appStateLogger.info(`Failed to update property: ${property}. ${error}`);
     }
   }
-
-  updateTopology().catch(e => pingLogger.error(e));
-  state.intervalIDTopology = setInterval(updateTopology, TOPOLOGY_UPDATE_INTERVAL * 1000);
+  try {
+    await updateTopology();
+  } catch (error) {
+    appStateLogger.info(`Failed to update Topology. ${error}`);
+  }
 }
+setInterval(updateProps, 10000);
 
 function initializeExpress() {
   const app = express();
@@ -93,7 +102,7 @@ function initializeExpress() {
   });
 
   app.get('/topology', (req, res) => {
-    res.json(state.topology);
+    res.json(topology);
   });
 
   function appendPingRecordToCSV(pingRecord) {
@@ -103,56 +112,75 @@ function initializeExpress() {
       [id, sourceIP, destIP, start, duration, packetSize, wasSuccess].join(',') + '\n';
     fs.appendFile(OUTPUT_FILE_PATH, rowString, function (err) {
       if (err) {
-        pingLogger.error(err);
+        appStateLogger.error(err);
       }
     });
+  }
+  function getPingResult(pingburstRequest) {
+    pingLogger.info(`Ping ${JSON.stringify(pingburstRequest)}. `);
+    session.timeout = pingburstRequest.timeout;
+    session.packetSize = pingburstRequest.packetSize;
+    return new Promise((resolve, reject) => {
+      session.pingHost(pingburstRequest.destIP, function (error, _, sent, rcvd) {
+        let ms = rcvd - sent;
+        resolve({
+          start: timestamp(sent),
+          duration: error ? -1 : ms,
+          wasSuccess: !error, //js convert to bool
+        });
+      });
+    });
+  }
+
+  async function performPing(pingburstRequest) {
+    const {start, duration, wasSuccess} = await getPingResult(pingburstRequest);
+    const {id, destIP, packetSize} = pingburstRequest;
+    let pingRecord = {
+      id,
+      sourceIP: state.sourceIP,
+      destIP,
+      start,
+      duration,
+      packetSize,
+      wasSuccess,
+    };
+    appendPingRecordToCSV(pingRecord);
+    state.pingbursts[pingburstRequest.id].records.push(pingRecord);
   }
 
   app.post('/pingbursts', (req, res) => {
     const pingburstRequest = req.body;
     const id = state.pingbursts.length;
+    pingburstRequest['id'] = id;
     const pingburst = {
       id,
-      numPacketsRequested: pingburstRequest.num_packets,
+      numPacketsRequested: pingburstRequest.numPackets,
       records: [],
     };
-    const n = pingburstRequest.num_packets;
-    const interval = pingburstRequest.interval;
-    const timeout = pingburstRequest.timeout;
-    repeatNTimes(
-      n,
-      interval,
-      (destIP, size, records) => {
-        let ms;
-        let session = ping.createSession({
-          networkProtocol: ping.NetworkProtocol.IPv4,
-          packetSize: size,
-          sessionId: process.pid % 65535,
-          timeout: timeout,
-          ttl: 128,
-        });
-        session.pingHost(destIP, function (error, destIP, sent, rcvd) {
-          ms = rcvd - sent;
-          const pingRecord = {
-            id,
-            sourceIP: state.sourceIP,
-            destIP,
-            start: timestamp(sent),
-            duration: error ? -1 : ms,
-            packetSize: size,
-            wasSuccess: !error, //js convert to bool
-          };
-          pingLogger.debug(pingRecord, error, rcvd);
-          records.push(pingRecord);
-          appendPingRecordToCSV(pingRecord);
-        });
-      },
-      pingburstRequest.destIP,
-      pingburstRequest.packetSize,
-      pingburst.records
-    );
     state.pingbursts.push(pingburst);
+    const n = pingburstRequest.numPackets;
+    const interval = pingburstRequest.interval;
+    let abortFuturePingbursts = null;
+    if (n === '∞') {
+      abortFuturePingbursts = intervalWithAbort(performPing, interval, pingburstRequest);
+    } else {
+      abortFuturePingbursts = repeatNTimes(performPing, interval, n, pingburstRequest);
+    }
+    pingburst['abortPingburst'] = function () {
+      pingburst.wasAborted = true;
+      const success = abortFuturePingbursts();
+      return success;
+    };
     res.json({id});
+  });
+
+  app.get('/pingbursts/:id/abort', (req, res) => {
+    const pingburstID = req.params.id;
+    const success = state.pingbursts[pingburstID].abortPingburst();
+    res.json({
+      id: pingburstID,
+      wasAbortSuccess: success,
+    });
   });
 
   app.get('/pingbursts/:id', (req, res) => {
@@ -162,7 +190,7 @@ function initializeExpress() {
   app.get('/pingbursts', (req, res) => {
     res.json(state.pingbursts);
   });
-  app.get('/gw_bringup', (req, res) => {
+  app.get('/connected', (req, res) => {
     res.json(state.connected);
   });
   // example query ?property=NCP:TXPower
@@ -189,6 +217,7 @@ function initializeExpress() {
     if (state.connected) {
       try {
         await setProp(req.query.property, req.query.newValue);
+        res.sendStatus(200);
       } catch (error) {
         res.json({success: false, message: error.message});
       }
@@ -266,7 +295,6 @@ function initializeGWBringup() {
     gwBringupLogger.info('Border router disconnected');
     state.connected = false;
     state.ready = false;
-    clearInterval(state.intervalIDTopology);
   }
 
   watcher

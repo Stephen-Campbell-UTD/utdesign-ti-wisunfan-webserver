@@ -5,14 +5,9 @@ const DBUS_INTERFACE = 'com.nestlabs.WPANTunnelDriver';
 const DBUS_OBJECT_PATH = '/com/nestlabs/WPANTunnelDriver/wfan0';
 const propValues = require('./propValues.js');
 const {WFANTUND_STATUS} = require('./wfantundConstants');
-const {
-  parseConnectedDevices,
-  parseDodagRoute,
-  parseMacFilterList,
-  getNumConnected,
-} = require('./parsing.js');
+const {parseMacFilterList, parseNCPIPv6} = require('./parsing.js');
 const {getKeyByValue} = require('./utils.js');
-const {dbusLogger, appStateLogger} = require('./logger.js');
+const {dbusLogger} = require('./logger.js');
 
 async function sendDBusMessage(command, property, newValue) {
   let methodCall = new dbus.Message({
@@ -46,37 +41,35 @@ async function sendDBusMessage(command, property, newValue) {
   } catch (error) {
     //e.g. the member/interface can't be found
     dbusLogger.debug(`${command} Failed. ${error.message}`);
-    throw Error('DBUS Message Call Failure');
+    throw Error(`DBUS Message Call Failure. ${error.message}`);
   }
 }
 
-function bufferToHex(buffer) {
-  return [...new Uint8Array(buffer)].map(b => b.toString(16).padStart(2, '0')).join('');
+async function getPropDBUS(property) {
+  return await sendDBusMessage('GetProp', property, '');
+}
+async function setPropDBUS(property, newValue) {
+  return await sendDBusMessage('SetProp', property, newValue);
 }
 
 async function updateProp(property) {
-  let propValue = await sendDBusMessage('GetProp', property, '');
+  let propValue = await getPropDBUS(property);
   switch (property) {
     case 'macfilterlist':
       propValue = parseMacFilterList(propValue);
       break;
-    case 'dodagroute':
-      propValue = parseDodagRoute(propValue);
+    case 'IPv6:AllAddresses':
+      propValue = parseNCPIPv6(propValue);
       break;
-    case 'connecteddevices':
-      propValue = parseConnectedDevices(propValue);
-      break;
-    case 'numconnected':
-      propValue = getNumConnected();
+    case 'NCP:HardwareAddress':
+      propValue = Buffer.from(propValue).toString('hex');
       break;
   }
-  propValue = Buffer.isBuffer(property) ? bufferToHex(property.hex()) : propValue;
   propValues[property] = propValue;
 }
-
 async function setProp(property, newValue) {
   if (typeof property !== 'undefined' && newValue !== '') {
-    await sendDBusMessage('SetProp', property, newValue);
+    await setPropDBUS(property, newValue);
     await updateProp(property);
   }
 }
@@ -93,20 +86,11 @@ function getProp(property) {
   }
 }
 
-async function updateProps() {
-  for (const property in propValues) {
-    try {
-      await updateProp(property);
-    } catch (error) {
-      appStateLogger.info(`Failed to update property: ${property}. ${error}`);
-    }
-  }
-}
-
 module.exports = {
   sendDBusMessage,
   updateProp,
-  updateProps,
+  setPropDBUS,
+  getPropDBUS,
   setProp,
   getProp,
   getProps,

@@ -9,41 +9,38 @@ _propValues["Interface:Up"] = true but will also log that the value changed
 const _propValues = {
   'NCP:ProtocolVersion': '',
   'NCP:Version': '',
-  'NCP:InterfaceType': '',
+  'NCP:InterfaceType': -1,
   'NCP:HardwareAddress': '',
-  'NCP:CCAThreshold': '',
-  'NCP:TXPower': '',
+  'NCP:CCAThreshold': -1,
+  'NCP:TXPower': -1,
   'NCP:Region': '',
-  'NCP:ModeID': '',
+  'NCP:ModeID': -1,
   unicastchlist: '',
   broadcastchlist: '',
   asyncchlist: '',
   chspacing: '',
   ch0centerfreq: '',
   'Network:Panid': '',
-  bcdwellinterval: '',
-  ucdwellinterval: '',
-  bcinterval: '',
-  ucchfunction: '',
-  bcchfunction: '',
-  macfilterlist: '',
-  macfiltermode: '',
-  'Interface:Up': '',
-  'Stack:Up': '',
+  bcdwellinterval: -1,
+  ucdwellinterval: -1,
+  bcinterval: -1,
+  ucchfunction: -1,
+  bcchfunction: -1,
+  macfilterlist: [],
+  macfiltermode: -1,
+  'Interface:Up': false,
+  'Stack:Up': false,
   'Network:NodeType': '',
   'Network:Name': '',
-  dodagroutedest: '',
-  dodagroute: '',
-  connecteddevices: '',
-  numconnected: '',
-  'IPv6:AllAddresses': '',
+  'IPv6:AllAddresses': [],
 };
 
 const propValues = new Proxy(_propValues, {
   set: (obj, prop, value) => {
-    appStateLogger.info(`NCP ${prop} = ${value}`);
+    appStateLogger.info(`NCP ${prop} = ${JSON.stringify(value)}`);
     obj[prop] = value;
     return true;
   },
 });
+
 module.exports = propValues;

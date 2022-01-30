@@ -59,6 +59,7 @@ function makeLogger(loggerLabel, showOnConsole = true, fileName = 'combined.log'
 }
 const dbusLogger = makeLogger('DBUS');
 const httpLogger = makeLogger('HTTP');
+const topologyLogger = makeLogger('TOPOLOGY');
 const pingLogger = makeLogger('PING');
 const wfantundLogger = makeLogger('WFANTUND', false, 'wfantund.log');
 const gwBringupLogger = makeLogger('GW_BRINGUP');
@@ -68,6 +69,7 @@ module.exports = {
   dbusLogger,
   httpLogger,
   pingLogger,
+  topologyLogger,
   wfantundLogger,
   gwBringupLogger,
   appStateLogger,
