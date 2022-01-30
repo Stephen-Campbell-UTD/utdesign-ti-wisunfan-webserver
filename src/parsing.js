@@ -62,7 +62,6 @@ function expandedIPToCanonicalIP(ip) {
   return canonicalIP;
 }
 function parseConnectedDevices(text) {
-  console.log('CD', text);
   let listArray = text.split('\n');
   // Parse IPs into connectedDevices array
   const connectedDevices = listArray
