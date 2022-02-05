@@ -1,7 +1,7 @@
 const {getPropDBUS, setProp, setPropDBUS} = require('./dbusCommands.js');
 const {topologyLogger} = require('./logger.js');
 const {parseConnectedDevices, parseDodagRoute, canonicalIPtoExpandedIP} = require('./parsing.js');
-const propValues = require('./propValues.js');
+const {propValues} = require('./propValues.js');
 
 /**
  *
@@ -74,7 +74,9 @@ async function updateTopology() {
     let numConnected = 0;
     let connectedDevicesSet = new Set();
     let fetchedAllDevices = false;
-    while (!fetchedAllDevices) {
+    const MAX_ITERATIONS = 100;
+    let iterations = 0;
+    while (!fetchedAllDevices && iterations < MAX_ITERATIONS) {
       // the DBUS connecteddevices property is a paginated version of the network's connected devices
       // Ideally, the numconnected DBUS property would be a good way to check
       // the number of pages. (at the time of writing numconnected gives no useful output)
@@ -82,6 +84,9 @@ async function updateTopology() {
       const [numInBatch, connectedDevicesBatch] = parseConnectedDevices(
         await getPropDBUS('connecteddevices')
       );
+      if (connectedDevicesBatch.length === 0) {
+        fetchedAllDevices = true;
+      }
 
       for (const connectedDevice of connectedDevicesBatch) {
         if (connectedDevicesSet.has(connectedDevice)) {
@@ -91,6 +96,7 @@ async function updateTopology() {
           connectedDevicesSet.add(connectedDevice);
         }
       }
+      iterations++;
     }
 
     let connectedDevices = Array.from(connectedDevicesSet);
@@ -115,40 +121,5 @@ async function updateTopology() {
     topologyLogger.info(`Failed to update. ${e}`);
   }
 }
-
-// async function getAllRoutes() {
-//   const connectedDevices = getProp('connecteddevices');
-//   const ipAddrList = parseConnectedDevices(connectedDevices);
-
-//   //Create a union with previous connected devices call (temp fix until wfantund is fixed)
-//   const connectedDevicesSecondCall = getProp('connecteddevices');
-//   parseConnectedDevices(connectedDevicesSecondCall).forEach(secondCallIP => {
-//     if (!ipAddrList.includes(secondCallIP)) {
-//       ipAddrList.push(secondCallIP);
-//     }
-//   });
-
-//   //ip address list could be empty if only the br is in the network
-//   const brIP = os.networkInterfaces()[process.env.NWP_IFACE][0]['address'];
-//   const routes = [[brIP]];
-//   for (const ipAddr of ipAddrList) {
-//     await setProp('dodagroutedest', ipAddr);
-//     const rawDodagRoute = getProp('dodagroute');
-//     const route = parseDodagRoute(rawDodagRoute);
-//     routes.push(route);
-//   }
-//   return routes;
-// }
-
-// function formatRouteIPs(routes) {
-//   return routes.map(route => route.map(ip => formatIPString(ip)));
-// }
-
-// async function getLatestTopology() {
-//   const routes = await getAllRoutes();
-//   const formattedRoutes = formatRouteIPs(routes);
-//   const flattenedTopology = routesToFlattenedGraph(formattedRoutes);
-//   return flattenedTopology;
-// }
 
 module.exports = {topology, updateTopology};

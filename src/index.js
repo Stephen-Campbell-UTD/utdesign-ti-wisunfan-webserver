@@ -3,11 +3,13 @@ const cors = require('cors');
 const ping = require('net-ping');
 const os = require('os');
 const fs = require('fs');
+const {Buffer} = require('buffer');
 const {spawn} = require('child_process');
-const {repeatNTimes, timestamp, intervalWithAbort} = require('./utils.js');
 const chokidar = require('chokidar');
+const SerialPort = require('serialport');
+const {repeatNTimes, timestamp, intervalWithAbort} = require('./utils.js');
 const {topology, updateTopology} = require('./topology.js');
-const propValues = require('./propValues.js');
+const {propValues, resetPropValues} = require('./propValues.js');
 
 //this import sets up necessary loggers
 const {
@@ -26,6 +28,7 @@ const path = require('path');
 const interface = process.env.NWP_IFACE;
 const OUTPUT_FILE_PATH = './output/PingResults.csv';
 const WFANTUND_PATH = '/usr/local/sbin/wfantund';
+const BR_FILE_PATH = '/dev/ttyACM0';
 
 let session = ping.createSession({
   networkProtocol: ping.NetworkProtocol.IPv6,
@@ -84,6 +87,79 @@ async function updateProps() {
   }
 }
 setInterval(updateProps, 10000);
+
+function startWfantund() {
+  gwBringupLogger.info('Starting wfantund');
+  state.wfantund = spawn(WFANTUND_PATH, ['-s', BR_FILE_PATH]);
+  state.wfantund.stdout.on('data', data => {
+    wfantundLogger.debug(`stdout: ${data}`);
+  });
+  state.wfantund.stderr.on('data', data => {
+    wfantundLogger.info(`stderr: ${data}`);
+  });
+  state.wfantund.on('close', code => {
+    gwBringupLogger.info('wfantund is closing');
+    state.wfantund = null;
+    if (code === 0) {
+      wfantundLogger.info(`Exited Successfully`);
+    } else {
+      wfantundLogger.error(`Exited with code ${code}`);
+    }
+  });
+}
+async function killWfantund() {
+  return new Promise((resolve, reject) => {
+    if (state.wfantund === null) {
+      reject('wfantund not running. Cannot kill');
+    }
+    gwBringupLogger.info('Killing wfantund');
+    state.wfantund.on('close', code => {
+      gwBringupLogger.info('wfantund is closing from a kill');
+      wfantundLogger.error(`Exited with code ${code}`);
+      state.wfantund = null;
+      resolve();
+    });
+    const wasSuccessful = state.wfantund.kill('SIGHUP');
+    if (!wasSuccessful) {
+      reject('kill unsuccessful');
+    }
+  });
+}
+
+async function resetBorderRouter() {
+  return new Promise(async (resolve, reject) => {
+    if (!state.connected) {
+      reject('BR not Connected. Cannot Reset');
+    }
+    if (state.wfantund) {
+      try {
+        await killWfantund();
+      } catch (e) {
+        reject(e);
+      }
+    }
+    resetPropValues();
+    const port = new SerialPort(BR_FILE_PATH, {baudRate: 115200}, err => {
+      if (err) {
+        gwBringupLogger.info(`Serial Port Error ${err}`);
+        throw Error('Failed to open Serial Port for Reset');
+      }
+      port.write(Buffer.from('7e8101da8b7e', 'hex'), err => {
+        if (err) {
+          reject('Successfully opened but failed to deliver reset message on Serial Port');
+        }
+        port.close(err => {
+          if (err) {
+            gwBringupLogger.info(`Serial Port Error ${err}`);
+            reject('Failed to close Serial Port');
+          }
+          startWfantund();
+          resolve();
+        });
+      });
+    });
+  });
+}
 
 function initializeExpress() {
   const app = express();
@@ -212,12 +288,20 @@ function initializeExpress() {
   app.get('/ready', (req, res) => {
     res.json(state.ready);
   });
+  app.get('/reset', async (req, res) => {
+    try {
+      await resetBorderRouter();
+      res.json({wasSuccess: true});
+    } catch (e) {
+      res.json({wasSuccess: false, message: e.message});
+    }
+  });
   // example query ?property=NCP:TWPower&newValue=10
   app.get('/setProp', async (req, res) => {
     if (state.connected) {
       try {
         await setProp(req.query.property, req.query.newValue);
-        res.sendStatus(200);
+        res.json({success: true});
       } catch (error) {
         res.json({success: false, message: error.message});
       }
@@ -242,8 +326,7 @@ function initializeExpress() {
 
 //gw bringup
 function initializeGWBringup() {
-  const portPath = '/dev/ttyACM0';
-  let watcher = chokidar.watch(portPath, {
+  let watcher = chokidar.watch(BR_FILE_PATH, {
     ignored: /^\./,
     persistent: true,
     ignorePermissionErrors: true,
@@ -260,24 +343,6 @@ function initializeGWBringup() {
     } catch (error) {
       gwBringupLogger.info('wfan0 interface not up');
     }
-  }
-  function startWfantund() {
-    gwBringupLogger.info('Starting wfantund');
-    state.wfantund = spawn(WFANTUND_PATH, ['-s', portPath]);
-    state.wfantund.stdout.on('data', data => {
-      wfantundLogger.debug(`stdout: ${data}`);
-    });
-    state.wfantund.stderr.on('data', data => {
-      wfantundLogger.info(`stderr: ${data}`);
-    });
-    state.wfantund.on('close', code => {
-      state.wfantund = null;
-      if (code === 0) {
-        wfantundLogger.info(`Exited Successfully`);
-      } else {
-        wfantundLogger.error(`Exited with code ${code}`);
-      }
-    });
   }
 
   function deviceAdded() {
@@ -305,10 +370,8 @@ function initializeGWBringup() {
     });
 }
 
-process.on('exit', code => {
-  if (state.wfantund !== null) {
-    state.wfantund.kill('SIGHUP');
-  }
+process.on('exit', async code => {
+  await killWfantund();
 });
 function main() {
   initializeGWBringup();

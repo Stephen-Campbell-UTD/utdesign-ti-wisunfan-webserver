@@ -3,7 +3,7 @@ const bus = dbus.systemBus();
 const DBUS_BUS_NAME = 'com.nestlabs.WPANTunnelDriver';
 const DBUS_INTERFACE = 'com.nestlabs.WPANTunnelDriver';
 const DBUS_OBJECT_PATH = '/com/nestlabs/WPANTunnelDriver/wfan0';
-const propValues = require('./propValues.js');
+const {propValues} = require('./propValues.js');
 const {WFANTUND_STATUS} = require('./wfantundConstants');
 const {parseMacFilterList, parseNCPIPv6} = require('./parsing.js');
 const {getKeyByValue} = require('./utils.js');
@@ -63,6 +63,9 @@ async function updateProp(property) {
       break;
     case 'NCP:HardwareAddress':
       propValue = Buffer.from(propValue).toString('hex');
+      break;
+    case 'Network:Panid':
+      propValue = propValue.toString(16).toUpperCase();
       break;
   }
   propValues[property] = propValue;
