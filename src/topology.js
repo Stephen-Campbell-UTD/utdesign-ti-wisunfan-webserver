@@ -1,37 +1,7 @@
-const {getPropDBUS, setProp, setPropDBUS} = require('./dbusCommands.js');
+const {getPropDBUS, setPropDBUS} = require('./dbusCommands.js');
 const {topologyLogger} = require('./logger.js');
 const {parseConnectedDevices, parseDodagRoute, canonicalIPtoExpandedIP} = require('./parsing.js');
-const {propValues} = require('./propValues.js');
-
-/**
- *
- * @returns {undefined | string} ip address
- */
-function getNetworkIPInfo() {
-  return propValues['IPv6:AllAddresses'].find(entry => entry.ip.substring(0, 4) !== 'fe80');
-}
-/**
- * Topology Singleton
- * Manages related properties
- *  - connectedDevices
- *  - numConnected
- *  - dodagroute
- *  - dodagroutedest
- */
-const _topology = {
-  graph: {nodes: [], edges: []},
-  numConnected: 0,
-  connectedDevices: [],
-  routes: [],
-};
-
-const topology = new Proxy(_topology, {
-  set: (obj, prop, value) => {
-    topologyLogger.info(`Topology State: ${prop} = ${JSON.stringify(value)}`);
-    obj[prop] = value;
-    return true;
-  },
-});
+const {getNetworkIPInfo} = require('./ClientState.js');
 
 function routesToGraph(routes) {
   let nodes = [];
@@ -63,10 +33,10 @@ function routesToGraph(routes) {
 /**
  * Calls the necessary DBUS methods for updating topology fields
  */
-async function updateTopology() {
-  const borderRouterIPInfo = getNetworkIPInfo();
+async function getLatestTopology(ClientState) {
+  const borderRouterIPInfo = getNetworkIPInfo(ClientState);
   if (borderRouterIPInfo === undefined) {
-    topologyLogger.info('Attempted to update topology with no Border Router IP address!');
+    topologyLogger.info('Attempted to get latest topology with no Border Router IP address!');
     return;
   }
 
@@ -113,13 +83,11 @@ async function updateTopology() {
         `NumConnected Prop: ${numConnected}. ConnectedDevices Length ${connectedDevices.length}`
       );
     }
-    topology.numConnected = numConnected;
-    topology.connectedDevices = connectedDevices;
-    topology.routes = routes;
-    topology.graph = routesToGraph(routes);
+    const graph = routesToGraph(routes);
+    return {numConnected, connectedDevices, routes, graph};
   } catch (e) {
     topologyLogger.info(`Failed to update. ${e}`);
   }
 }
 
-module.exports = {topology, updateTopology};
+module.exports = {getLatestTopology};

@@ -1,13 +1,13 @@
 const dbus = require('dbus-next');
-const bus = dbus.systemBus();
-const DBUS_BUS_NAME = 'com.nestlabs.WPANTunnelDriver';
-const DBUS_INTERFACE = 'com.nestlabs.WPANTunnelDriver';
-const DBUS_OBJECT_PATH = '/com/nestlabs/WPANTunnelDriver/wfan0';
-const {propValues} = require('./propValues.js');
 const {WFANTUND_STATUS} = require('./wfantundConstants');
-const {parseMacFilterList, parseNCPIPv6} = require('./parsing.js');
 const {getKeyByValue} = require('./utils.js');
 const {dbusLogger} = require('./logger.js');
+
+const DBUS_BUS_NAME = 'com.nestlabs.WPANTunnelDriver';
+const DBUS_OBJECT_PATH = '/com/nestlabs/WPANTunnelDriver/wfan0';
+const DBUS_INTERFACE = 'com.nestlabs.WPANTunnelDriver';
+
+const bus = dbus.systemBus();
 
 async function sendDBusMessage(command, property, newValue) {
   let methodCall = new dbus.Message({
@@ -52,49 +52,8 @@ async function setPropDBUS(property, newValue) {
   return await sendDBusMessage('SetProp', property, newValue);
 }
 
-async function updateProp(property) {
-  let propValue = await getPropDBUS(property);
-  switch (property) {
-    case 'macfilterlist':
-      propValue = parseMacFilterList(propValue);
-      break;
-    case 'IPv6:AllAddresses':
-      propValue = parseNCPIPv6(propValue);
-      break;
-    case 'NCP:HardwareAddress':
-      propValue = Buffer.from(propValue).toString('hex');
-      break;
-    case 'Network:Panid':
-      propValue = propValue.toString(16).toUpperCase();
-      break;
-  }
-  propValues[property] = propValue;
-}
-async function setProp(property, newValue) {
-  if (typeof property !== 'undefined' && newValue !== '') {
-    await setPropDBUS(property, newValue);
-    await updateProp(property);
-  }
-}
-
-function getProps() {
-  return propValues;
-}
-
-function getProp(property) {
-  if (!(property in propValues)) {
-    throw Error(`Property ${property} not in propValues`);
-  } else {
-    return propValues[property];
-  }
-}
-
 module.exports = {
   sendDBusMessage,
-  updateProp,
   setPropDBUS,
   getPropDBUS,
-  setProp,
-  getProp,
-  getProps,
 };

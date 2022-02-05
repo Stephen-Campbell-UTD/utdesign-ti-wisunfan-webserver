@@ -62,7 +62,7 @@ const httpLogger = makeLogger('HTTP');
 const topologyLogger = makeLogger('TOPOLOGY');
 const pingLogger = makeLogger('PING');
 const wfantundLogger = makeLogger('WFANTUND', false, 'wfantund.log');
-const gwBringupLogger = makeLogger('GW_BRINGUP');
+const borderRouterLogger = makeLogger('BORDER ROUTER');
 const appStateLogger = makeLogger('APP_STATE');
 
 module.exports = {
@@ -71,6 +71,6 @@ module.exports = {
   pingLogger,
   topologyLogger,
   wfantundLogger,
-  gwBringupLogger,
+  borderRouterLogger,
   appStateLogger,
 };

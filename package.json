@@ -11,6 +11,7 @@
     "express": "^4.17.1",
     "net-ping": "^1.2.3",
     "serialport": "^9.2.8",
+    "socket.io": "^4.4.1",
     "winston": "^3.4.0"
   },
   "devDependencies": {
@@ -22,8 +23,8 @@
     "pretty-quick": "^3.1.3"
   },
   "scripts": {
-    "wfan": "sudo NWP_IFACE=wfan0 node src/index.js",
-    "wfan-debug": "sudo NWP_IFACE=wfan0 LOG_LEVEL=debug node src/index.js",
+    "wfan": "sudo node src/index.js",
+    "wfan-debug": "sudo LOG_LEVEL=debug node src/index.js",
     "lint": "eslint --fix src/*.js && eslint --fix mock/*.js",
     "pretty-quick": "pretty-quick",
     "loopback": "node src/index.js",
