@@ -16,11 +16,11 @@ function main() {
       origin: 'http://localhost:3000',
     },
   });
+  initializeSocketIOEvents(io);
   const brManager = new BorderRouterManager();
   const pingExecutor = new PingExecutor();
   initializeRoutes(app, pingExecutor, brManager);
 
-  initializeSocketIOEvents(io);
   httpServer.listen(PORT, () => {
     httpLogger.info(`Listening on http://localhost:${PORT}`);
   });

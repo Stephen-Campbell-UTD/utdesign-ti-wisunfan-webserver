@@ -1,7 +1,7 @@
 const {parseMacFilterList, parseNCPIPv6} = require('./parsing.js');
 const {getPropDBUS, setPropDBUS} = require('./dbusCommands.js');
 const {appStateLogger} = require('./logger.js');
-const JSONPatcherProxy = require('./JSONProxyPatcher');
+const {observe, generate} = require('fast-json-patch');
 
 const defaultNCPProperties = () => {
   return {
@@ -48,7 +48,7 @@ const defaultTopology = () => {
 };
 
 //this non-circular js object is synced, via socket.io, to the client
-const _ClientState = {
+const ClientState = {
   //Number of elaboration of mesh connections
   topology: defaultTopology(),
   pingbursts: [],
@@ -58,18 +58,27 @@ const _ClientState = {
   ncpProperties: defaultNCPProperties(),
 };
 
-let ClientState = _ClientState;
 function initializeSocketIOEvents(io) {
-  const ClientStateProxy = new JSONPatcherProxy(_ClientState);
+  // const ClientStateProxy = new JSONPatcherProxy(_ClientState);
+  const clientStateObserver = observe(ClientState);
 
-  ClientState = ClientStateProxy.observe(false, patch => {
-    appStateLogger.info(`Sending State Patch to Clients. ${JSON.stringify(patch, null, 2)}`);
-    io.emit('stateChange', [patch]);
-  });
+  setInterval(() => {
+    const patches = generate(clientStateObserver);
+    if (patches.length > 0) {
+      appStateLogger.info(`Sending State Patch to Clients. ${JSON.stringify(patches, null, 2)}`);
+      io.emit('stateChange', patches);
+    }
+  }, 50);
+
+  // ClientState = ClientStateProxy.observe(false, patch => {
+  //   appStateLogger.info(`Sending State Patch to Clients. ${JSON.stringify(patch, null, 2)}`);
+  //   io.emit('stateChange', [patch]);
+  // });
 
   io.on('connection', socket => {
     socket.emit('initialState', ClientState);
     appStateLogger.info('SocketIO Client Connection Established. Sending State');
+    appStateLogger.info(JSON.stringify(ClientState, null, 2));
   });
 }
 

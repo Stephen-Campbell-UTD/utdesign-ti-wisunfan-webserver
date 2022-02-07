@@ -63,6 +63,8 @@ class BorderRouterManager {
   };
 
   deviceRemoved = () => {
+    clearInterval(this.ncpPropertyUpdateIntervalID);
+    clearInterval(this.topologyUpdateIntervalID);
     borderRouterLogger.info('Border router disconnected');
     this.connected = false;
   };

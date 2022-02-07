@@ -96,11 +96,12 @@ class PingExecutor {
   };
 
   performPing = async pingburstRequest => {
-    const {ip: sourceIP} = getNetworkIPInfo(ClientState);
-    if (sourceIP === undefined) {
-      pingLogger.info('Tried to ping without border router IP!');
-      return false;
+    const networkIPInfo = getNetworkIPInfo(ClientState);
+    if (networkIPInfo === undefined) {
+      pingLogger.info('Tried to start pingburst without border router IP!');
+      return -1;
     }
+    const {ip: sourceIP} = networkIPInfo;
     const {start, duration, wasSuccess} = await this.getPingResult(pingburstRequest);
     const {id, destIP, packetSize} = pingburstRequest;
     let pingRecord = {
