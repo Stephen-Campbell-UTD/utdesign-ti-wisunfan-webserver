@@ -1,0 +1,5 @@
+.tab_selector {
+  font-size: 18px;
+  cursor: pointer;
+  user-select: none;
+}

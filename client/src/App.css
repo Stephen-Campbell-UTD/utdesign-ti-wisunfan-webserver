@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100;0,200;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* ::-webkit-scrollbar{
+  display: none;
+} */
+
+:root {
+  /* -ms-overflow-style: none;  
+  scrollbar-width: none;   */
+}
+body {
+  font: 18px Raleway, sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: white;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+img {
+  user-select: none;
+}
+
+.dash_title_container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  height: 80px;
+  margin-bottom: 20px;
+}
+
+.dash_title {
+  font-weight: 400;
+  font-size: 46px;
+  margin-left: 4.1667vw;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.top_vstack {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 100%;
+  margin-bottom: 100px;
+}
+.pane_container {
+  width: 91.67vw;
+  margin: 0px 4.1667vw;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.tile_container_full {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.tile_container_common {
+  width: 92%;
+}
+
+.tile_container_half {
+  width: 48%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.tile_container_hstack {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.tile_header {
+  font-size: 18px;
+  font-weight: 500;
+  margin-top: 20px;
+  margin-bottom: 15px;
+}
+
+/* html {
+  --scrollbarBG: #CFD8DC;
+  --thumbBG: #90A4AE;
+} */
+*::-webkit-scrollbar {
+  width: 0.8vw;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--thumb_bg) var(--scrollbar_bg);
+}
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar_bg);
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--thumb_bg);
+  /* border-radius: 6px; */
+  /* border: 3px solid var(--scrollbar_bg); */
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--thumb_bg_hover);
+}
