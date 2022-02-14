@@ -31,7 +31,7 @@
     "web-vitals": "^1.1.2"
   },
   "scripts": {
-    "start": "export SET NODE_OPTIONS=--openssl-legacy-provider && react-scripts start",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "build:dev": "dotenv -e .env.development react-scripts build",
     "format:all": "prettier --write \"src/**/*.[jt]s?(x)\"",
@@ -39,7 +39,7 @@
     "lint": "eslint --fix \"src/**/*.[jt]s?(x)\"",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "watch": "export SET NODE_OPTIONS=--openssl-legacy-provider && cra-build-watch --build-path ../static"
+    "watch": "cra-build-watch --build-path ../static"
   },
   "browserslist": {
     "production": [
