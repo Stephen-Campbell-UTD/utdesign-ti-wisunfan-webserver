@@ -6,6 +6,7 @@ const {PingExecutor} = require('./PingExecutor.js');
 const {BorderRouterManager} = require('./BorderRouterManager.js');
 const path = require('path');
 const {sendDBusMessage} = require('./dbusCommands.js');
+const {CONSTANTS} = require('./AppConstants');
 
 /**
  *
@@ -18,7 +19,7 @@ function initializeRoutes(app, pingExecutor, borderRouterManager) {
   app.use(express.json());
 
   app.use(express.static(path.resolve(path.join(__dirname, '../../static'))));
-  app.use(express.static('./output'));
+  app.use(express.static(CONSTANTS.OUTPUT_DIR_PATH));
   app.use((req, res, next) => {
     httpLogger.info(`${req.ip} ${req.method} ${req.originalUrl}`);
     next();
