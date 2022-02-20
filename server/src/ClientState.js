@@ -65,7 +65,7 @@ function initializeSocketIOEvents(io) {
   setInterval(() => {
     const patches = generate(clientStateObserver);
     if (patches.length > 0) {
-      appStateLogger.info(`Sending State Patch to Clients. ${JSON.stringify(patches, null, 2)}`);
+      appStateLogger.debug(`Sending State Patch to Clients. ${JSON.stringify(patches, null, 2)}`);
       io.emit('stateChange', patches);
     }
   }, 50);
@@ -78,7 +78,7 @@ function initializeSocketIOEvents(io) {
   io.on('connection', socket => {
     socket.emit('initialState', ClientState);
     appStateLogger.info('SocketIO Client Connection Established. Sending State');
-    appStateLogger.info(JSON.stringify(ClientState, null, 2));
+    appStateLogger.debug(JSON.stringify(ClientState, null, 2));
   });
 }
 

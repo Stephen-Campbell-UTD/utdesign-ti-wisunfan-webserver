@@ -1,30 +1,40 @@
-# Running (Linux only)
+# Description
+
+The utdesign-ti-wisunfan-webserver provides a configuration and realtime
+monitoring solution for TI's WiSUN offerings.
+
+# Getting Started
 
 **Prerequisites**
 
-- Install [Node.js](https://nodejs.org/en/)
+- Install [wfantund](https://github.com/TexasInstruments/ti-wisunfantund)
+
+# Usage
+
+# Developing
+
+**Prerequisites**
 
 - Install [wfantund](https://github.com/TexasInstruments/ti-wisunfantund)
 
-- Download and import the [TI GUI Composer project](https://github.com/Justin-Schmisseur/TI_WebApp_Protoype) (Requires a dev.ti account)
+- Install [Node.js](https://nodejs.org/en/)
 
-**Setup**
+  - **Important** If using sudo, Node >v17.4.0 must be in the sudo path e.g. in /usr/bin/
 
-Install webserver dependencies with `npm install`
+- Install each client/server dependences
+  For Client:
+  ```bash
+  cd <project-root>/client
+  npm install
+  ```
+  For Server:
+  ```bash
+  cd <project-root>/server
+  npm install
+  ```
 
-**Get Started**
+**Running the Development Server**
 
-Start the server with `npm run wfan`
+# Notes
 
----
-
-### Development Only
-
-Formatter: Prettier
-Linter: eslint
-
-1. Install the prettier and eslint in the global npm packages
-
-   `npm install -g prettier eslint`
-
-2. Install the prettier and eslint extensions for your editor
+This project is a part of UTDesign capstone project.

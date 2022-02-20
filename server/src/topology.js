@@ -36,7 +36,7 @@ function routesToGraph(routes) {
 async function getLatestTopology(ClientState) {
   const borderRouterIPInfo = getNetworkIPInfo(ClientState);
   if (borderRouterIPInfo === undefined) {
-    topologyLogger.info('Attempted to get latest topology with no Border Router IP address!');
+    topologyLogger.debug('Attempted to get latest topology with no Border Router IP address!');
     return;
   }
 
@@ -86,7 +86,7 @@ async function getLatestTopology(ClientState) {
     const graph = routesToGraph(routes);
     return {numConnected, connectedDevices, routes, graph};
   } catch (e) {
-    topologyLogger.info(`Failed to update. ${e}`);
+    topologyLogger.debug(`Failed to update. ${e}`);
   }
 }
 

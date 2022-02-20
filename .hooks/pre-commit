@@ -3,7 +3,7 @@
 echo "Checking Client..."
 cd client 
 npm run pretty-quick --staged
-STAGED_FILES=( $(git diff --cached --name-only --diff-filter=ACM | grep "[tj]sx\{0,1\}$" | cut -c 8-) )
+STAGED_FILES=( $(git diff --cached --name-only --diff-filter=ACM | grep "client.*[tj]sx\{0,1\}$" | cut -c 8-) )
 if ((${#STAGED_FILES[@]})); then
   # staged array is non empty
   $ESLINT "${STAGED_FILES[@]}" --fix
@@ -23,7 +23,7 @@ cd server
 npm run pretty-quick --staged
 if ((${#STAGED_FILES[@]})); then
   # staged array is non empty
-  STAGED_FILES=( $(git diff --cached --name-only --diff-filter=ACM | grep "js$" | cut -c 9-) )
+  STAGED_FILES=( $(git diff --cached --name-only --diff-filter=ACM | grep "server.*js$" | cut -c 9-) )
   $ESLINT "${STAGED_FILES[@]}" --fix
   git add "${STAGED_FILES[@]}"
   ESLINT_EXIT="$?"

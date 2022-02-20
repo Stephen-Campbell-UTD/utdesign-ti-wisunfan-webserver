@@ -8,11 +8,7 @@ const chokidar = require('chokidar');
 const SerialPort = require('serialport');
 const {borderRouterLogger} = require('./logger');
 const {WfantundManager} = require('./WfantundManager');
-const {
-  PROPERTY_UPDATE_INTERVAL,
-  TOPOLOGY_UPDATE_INTERVAL,
-  BR_FILE_PATH,
-} = require('./AppConstants');
+const {CONSTANTS} = require('./AppConstants');
 const {getLatestTopology} = require('./topology');
 
 /**
@@ -26,7 +22,7 @@ const {getLatestTopology} = require('./topology');
  */
 class BorderRouterManager {
   constructor() {
-    this.watcher = chokidar.watch(BR_FILE_PATH, {
+    this.watcher = chokidar.watch(CONSTANTS.BR_FILE_PATH, {
       ignored: /^\./,
       persistent: true,
       ignorePermissionErrors: true,
@@ -57,9 +53,12 @@ class BorderRouterManager {
     this.updateTopology();
     this.ncpPropertyUpdateIntervalID = setInterval(
       this.updateNCPProperties,
-      PROPERTY_UPDATE_INTERVAL
+      CONSTANTS.PROPERTY_UPDATE_INTERVAL
     );
-    this.topologyUpdateIntervalID = setInterval(this.updateTopology, TOPOLOGY_UPDATE_INTERVAL);
+    this.topologyUpdateIntervalID = setInterval(
+      this.updateTopology,
+      CONSTANTS.TOPOLOGY_UPDATE_INTERVAL
+    );
   };
 
   deviceRemoved = () => {
@@ -77,7 +76,7 @@ class BorderRouterManager {
           ClientState.ncpProperties[property] = propertyValue;
         }
       } catch (error) {
-        borderRouterLogger.info(`Failed to update property: ${property}. ${error}`);
+        borderRouterLogger.debug(`Failed to update property: ${property}. ${error}`);
       }
     }
   };
@@ -92,7 +91,7 @@ class BorderRouterManager {
         Object.assign(ClientState.topology, newTopology);
       }
     } catch (error) {
-      borderRouterLogger.info(`Failed to update Topology. ${error}`);
+      borderRouterLogger.debug(`Failed to update Topology. ${error}`);
     }
   };
 
@@ -110,10 +109,10 @@ class BorderRouterManager {
       }
       resetNCPPropertyValues();
       resetTopology();
-      const port = new SerialPort(BR_FILE_PATH, {baudRate: 115200}, err => {
+      const port = new SerialPort(CONSTANTS.BR_FILE_PATH, {baudRate: 115200}, err => {
         if (err) {
-          borderRouterLogger.info(`Serial Port Error ${err}`);
-          throw Error('Failed to open Serial Port for Reset');
+          borderRouterLogger.error(`Serial Port Error ${err}`);
+          return;
         }
         port.write(Buffer.from('7e8101da8b7e', 'hex'), err => {
           if (err) {
@@ -121,7 +120,7 @@ class BorderRouterManager {
           }
           port.close(err => {
             if (err) {
-              borderRouterLogger.info(`Serial Port Error ${err}`);
+              borderRouterLogger.error(`Serial Port Error ${err}`);
               reject('Failed to close Serial Port');
             }
             this.wfantundManager.start();

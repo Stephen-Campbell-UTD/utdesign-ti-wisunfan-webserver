@@ -1,7 +1,7 @@
 const ping = require('net-ping');
 const path = require('path');
 const fs = require('fs');
-const {OUTPUT_FILE_PATH} = require('./AppConstants');
+const {CONSTANTS} = require('./AppConstants');
 const {pingLogger, appStateLogger} = require('./logger.js');
 const {ClientState, getNetworkIPInfo} = require('./ClientState');
 const {repeatNTimes, timestamp, intervalWithAbort} = require('./utils.js');
@@ -12,19 +12,20 @@ class PingExecutor {
   }
 
   constructor() {
-    this.session = ping.createSession({
-      networkProtocol: ping.NetworkProtocol.IPv6,
-      packetSize: 50,
-      sessionId: process.pid % 65535,
-      timeout: 1000,
-      ttl: 128,
-    });
-    const csvHeaders = 'pingburstID,sourceIP,destIP,start_time,duration,packetSize,wasSuccess\n';
-    const outputDir = path.dirname(OUTPUT_FILE_PATH);
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir);
+    try {
+      this.session = ping.createSession({
+        networkProtocol: ping.NetworkProtocol.IPv6,
+        packetSize: 50,
+        sessionId: process.pid % 65535,
+        timeout: 1000,
+        ttl: 128,
+      });
+    } catch {
+      pingLogger.error('Tried to create Ping session and failed. Try running with sudo');
     }
-    fs.writeFile(OUTPUT_FILE_PATH, csvHeaders, function (err) {
+    const csvHeaders = 'pingburstID,sourceIP,destIP,start_time,duration,packetSize,wasSuccess\n';
+    const outputFilePath = path.join(CONSTANTS.OUTPUT_DIR_PATH, CONSTANTS.PING_RESULTS_FILE_NAME);
+    fs.writeFile(outputFilePath, csvHeaders, function (err) {
       if (err) throw err;
     });
   }
@@ -34,7 +35,8 @@ class PingExecutor {
     start = start.replace(',', '');
     const rowString =
       [id, sourceIP, destIP, start, duration, packetSize, wasSuccess].join(',') + '\n';
-    fs.appendFile(OUTPUT_FILE_PATH, rowString, function (err) {
+    const outputFilePath = path.join(CONSTANTS.OUTPUT_DIR_PATH, CONSTANTS.PING_RESULTS_FILE_NAME);
+    fs.appendFile(outputFilePath, rowString, function (err) {
       if (err) {
         appStateLogger.error(err);
       }

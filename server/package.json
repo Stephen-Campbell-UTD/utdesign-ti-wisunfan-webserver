@@ -6,6 +6,7 @@
   "dependencies": {
     "chokidar": "^3.5.2",
     "coap": "^0.26.0",
+    "commander": "^9.0.0",
     "cors": "^2.8.5",
     "dbus-next": "^0.10.2",
     "express": "^4.17.1",
@@ -19,15 +20,24 @@
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
+    "pkg": "^5.5.2",
     "prettier": "^2.4.1",
     "pretty-quick": "^3.1.3"
   },
   "scripts": {
     "wfan": "sudo node src/index.js",
-    "wfan-debug": "sudo LOG_LEVEL=debug node src/index.js",
-    "lint": "eslint --fix src/*.js",
+    "wfan-debug": "sudo WFANTUND_WEBSERVER_LOG_LEVEL=debug node src/index.js",
     "pretty-quick": "pretty-quick",
-    "loopback": "node src/index.js"
+    "package": "pkg src/index.js --compress GZip --config ./package.json  --output utdesign-ti-wisunfan-webserver.out"
+  },
+  "pkg": {
+    "assets": [
+      "../static/**/*",
+      "node_modules/@serialport/bindings/**/*"
+    ],
+    "targets": [
+      "node16"
+    ]
   },
   "author": "",
   "license": "ISC"

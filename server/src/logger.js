@@ -4,12 +4,6 @@ const path = require('path');
 const {format} = winston;
 const {combine, label, timestamp, printf, prettyPrint, align, colorize} = format;
 
-const logDirectory = process.env['LOG_PATH'] || './logs';
-
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-
 /*
 RFC5424 the syslog levels (what is reference by winston.config.syslog.levels)
 {
@@ -24,10 +18,16 @@ RFC5424 the syslog levels (what is reference by winston.config.syslog.levels)
 }
 */
 
+const LOG_DIR_PATH = '/tmp/utdesign-wisunfan-webserver/logs';
+
+if (!fs.existsSync(LOG_DIR_PATH)) {
+  fs.mkdirSync(LOG_DIR_PATH, {recursive: true});
+}
+
 function makeLogger(loggerLabel, showOnConsole = true, fileName = 'combined.log') {
   let transports = [];
   const defaultFileTransport = new winston.transports.File({
-    filename: path.join(logDirectory, fileName),
+    filename: path.join(LOG_DIR_PATH, fileName),
     options: {flags: 'w'}, //overwrites current log
     format: combine(
       label({label: loggerLabel}),
@@ -39,7 +39,7 @@ function makeLogger(loggerLabel, showOnConsole = true, fileName = 'combined.log'
   });
   transports.push(defaultFileTransport);
   const defaultConsoleTransport = new winston.transports.Console({
-    level: process.env['LOG_LEVEL'] || 'info',
+    level: process.env['WFANTUND_WEBSERVER_LOG_LEVEL'] || 'info',
     format: combine(
       label({label: loggerLabel}),
       colorize(),

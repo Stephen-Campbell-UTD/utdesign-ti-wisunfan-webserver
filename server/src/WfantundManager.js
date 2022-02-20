@@ -1,6 +1,6 @@
 const {wfantundLogger} = require('./logger');
 const {spawn} = require('child_process');
-const {WFANTUND_PATH, BR_FILE_PATH} = require('./AppConstants');
+const {CONSTANTS} = require('./AppConstants');
 
 /**
  * Starts and Manages a wfantund process
@@ -17,7 +17,7 @@ class WfantundManager {
 
   start() {
     wfantundLogger.info('Starting wfantund');
-    this.wfantund = spawn(WFANTUND_PATH, ['-s', BR_FILE_PATH]);
+    this.wfantund = spawn(CONSTANTS.WFANTUND_PATH, ['-s', CONSTANTS.BR_FILE_PATH]);
     this.wfantund.on('error', () => {
       wfantundLogger.error('Failed to start wfantund');
     });
