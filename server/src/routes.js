@@ -91,13 +91,20 @@ function initializeRoutes(app, pingExecutor, borderRouterManager) {
     }
   });
   // example query ?newValue=2020abcd21124b00&insert=false
-  app.get('/macfilterlist', async (req, res) => {
+  app.get('/macfilterUpdate', async (req, res) => {
     if (ClientState.connected) {
-      if (req.query.insert === 'true') {
-        await sendDBusMessage('InsertProp', 'macfilterlist', req.query.newValue);
-      } else if (req.query.insert === 'false') {
-        await sendDBusMessage('RemoveProp', 'macfilterlist', req.query.newValue);
+      try {
+        if (req.query.insert === 'true') {
+          await sendDBusMessage('InsertProp', 'macfilterlist', req.query.newValue);
+        } else if (req.query.insert === 'false') {
+          await sendDBusMessage('RemoveProp', 'macfilterlist', req.query.newValue);
+        }
+        res.json({wasSuccess: true});
+      } catch (error) {
+        res.json({wasSuccess: false, message: error.message});
       }
+    } else {
+      res.json({wasSuccess: false, message: 'Border Router Not Connected'});
     }
   });
 }

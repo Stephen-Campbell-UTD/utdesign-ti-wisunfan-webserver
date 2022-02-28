@@ -470,19 +470,30 @@ function MacFilterUpdater() {
     }
   };
 
-  const handleChange = (event: {currentTarget: {value: string}}) => {
-    setMacfilter(event.currentTarget.value);
+  const handleChange = (value: string) => {
+    setMacfilter(value);
   };
 
   return (
     <div>
-      <textarea
+      <ThemedInput
+        style={{width: '90%', fontSize: 14, height: 30}}
+        inputStyle={{height: 30}}
         onChange={handleChange}
         value={macfilter}
-        placeholder="add/remove here..."
-      ></textarea>
-      <button onClick={() => macfilterUpdate(true, macfilter)}>Add</button>
-      <button onClick={() => macfilterUpdate(false, macfilter)}>Remove</button>
+      ></ThemedInput>
+      <ThemedButton
+        onClick={() => macfilterUpdate(true, macfilter)}
+        themedButtonType={THEMED_BUTTON_TYPE.PRIMARY}
+      >
+        Add
+      </ThemedButton>
+      <ThemedButton
+        onClick={() => macfilterUpdate(false, macfilter)}
+        themedButtonType={THEMED_BUTTON_TYPE.SECONDARY}
+      >
+        Remove
+      </ThemedButton>
     </div>
   );
 }
