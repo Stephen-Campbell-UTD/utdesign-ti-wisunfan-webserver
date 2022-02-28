@@ -452,6 +452,41 @@ enum NETWORK_PROPERTIES {
   MAC_FILTER_LIST = 'macfilterlist',
 }
 
+function MacFilterUpdater() {
+  const App = useContext(AppContext);
+  const [macfilter, setMacfilter] = useState('');
+
+  const macfilterUpdate = async (insert: boolean, value: string) => {
+    try {
+      let {wasSuccess} = await APIService.macfilterUpdate(insert, value);
+      console.log(wasSuccess);
+    } catch (e) {
+      //network error
+      if (App === null) {
+        console.error('App is null');
+        return;
+      }
+      App.receivedNetworkError(e);
+    }
+  };
+
+  const handleChange = (event: {currentTarget: {value: string}}) => {
+    setMacfilter(event.currentTarget.value);
+  };
+
+  return (
+    <div>
+      <textarea
+        onChange={handleChange}
+        value={macfilter}
+        placeholder="add/remove here..."
+      ></textarea>
+      <button onClick={() => macfilterUpdate(true, macfilter)}>Add</button>
+      <button onClick={() => macfilterUpdate(false, macfilter)}>Remove</button>
+    </div>
+  );
+}
+
 function NetworkProperties(props: NetworkPropertiesProps) {
   const [activeProperty, setActiveProperty] = useState(NETWORK_PROPERTIES.CONNECTED_DEVICES);
   const options = [
@@ -466,7 +501,12 @@ function NetworkProperties(props: NetworkPropertiesProps) {
       displayElement = <ThemedUnorderedList items={props.connecteddevices} />;
       break;
     case NETWORK_PROPERTIES.MAC_FILTER_LIST:
-      displayElement = <ThemedUnorderedList items={props.macfilterlist} />;
+      displayElement = (
+        <div>
+          <MacFilterUpdater />
+          <ThemedUnorderedList items={props.macfilterlist} />
+        </div>
+      );
       break;
     default:
   }

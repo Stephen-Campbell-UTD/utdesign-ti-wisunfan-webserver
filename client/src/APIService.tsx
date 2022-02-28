@@ -54,6 +54,14 @@ export class APIService {
     return data;
   }
 
+  static async macfilterUpdate(
+    insert: boolean,
+    value: NCPProperties[keyof NCPProperties]
+  ): Promise<RequestStatus> {
+    const data = await APIService.fetchJSON(`/macfilterUpdate?insert=${insert}&newValue=${value}`);
+    return data;
+  }
+
   static async getConnected(): Promise<boolean> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 500);
