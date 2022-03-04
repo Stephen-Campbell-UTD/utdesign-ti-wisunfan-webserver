@@ -36,7 +36,7 @@
       "node_modules/@serialport/bindings/**/*"
     ],
     "targets": [
-      "node16"
+      "node16-linux-x64"
     ]
   },
   "author": "",
