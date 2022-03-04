@@ -5,7 +5,7 @@ const {
   resetTopology,
 } = require('./ClientState');
 const chokidar = require('chokidar');
-const SerialPort = require('serialport');
+const {SerialPort} = require('serialport');
 const {borderRouterLogger} = require('./logger');
 const {WfantundManager} = require('./WfantundManager');
 const {CONSTANTS} = require('./AppConstants');
@@ -109,7 +109,7 @@ class BorderRouterManager {
       }
       resetNCPPropertyValues();
       resetTopology();
-      const port = new SerialPort(CONSTANTS.BR_FILE_PATH, {baudRate: 115200}, err => {
+      const port = new SerialPort({baudRate: 115200, path: CONSTANTS.BR_FILE_PATH}, err => {
         if (err) {
           borderRouterLogger.error(`Serial Port Error ${err}`);
           return;

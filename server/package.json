@@ -12,7 +12,7 @@
     "express": "^4.17.1",
     "fast-json-patch": "^3.1.0",
     "net-ping": "^1.2.3",
-    "serialport": "^9.2.8",
+    "serialport": "^10.3.0",
     "socket.io": "^4.4.1",
     "winston": "^3.4.0"
   },
@@ -33,7 +33,7 @@
   "pkg": {
     "assets": [
       "../static/**/*",
-      "node_modules/@serialport/bindings/**/*"
+      "node_modules/@serialport/bindings-cpp/**/*"
     ],
     "targets": [
       "node16-linux-x64"
