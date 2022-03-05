@@ -10,7 +10,7 @@ monitoring solution for TI's WiSUN offerings.
 - Download latest [release](https://github.com/Stephen-Campbell-UTD/utdesign-ti-wisunfan-webserver/releases)
 
 # Usage
-1. Open your shell directory where the release executable, `utdesign-ti-wisunfan-webserver.out`, was downloaded
+1. Open your shell where the release executable, `utdesign-ti-wisunfan-webserver.out`, was downloaded
 2. Ensure `./utdesign-ti-wisunfan-webserver.out` has the executable file permission. If not, run `chmod +x ./utdesign-ti-wisunfan-webserver.out`
 3. Run `./utdesign-ti-wisunfan-webserver.out`. This requires root priviledges.
 This will start a webserver on port 80 (port can be configured with `--port <port-number>` flag)
@@ -56,6 +56,11 @@ This will start a webserver on port 80 (port can be configured with `--port <por
   cd <project-root>/server
   npm install
   ```
+
+
+# Troubleshooting
+
+In development, you may run out of file watchers available on the system. This [solution](https://stackoverflow.com/questions/22475849/node-js-what-is-enospc-error-and-how-to-solve) has fixed this issue in the past.
 
 # Notes
 

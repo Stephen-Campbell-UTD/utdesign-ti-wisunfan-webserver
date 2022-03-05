@@ -115,6 +115,50 @@ function parseMacFilterList(text) {
   return listArray.map(line => line.trim()).filter(line => line.length > 0);
 }
 
+function hex2bin(hex) {
+  return parseInt(hex, 16).toString(2).padStart(8, '0');
+}
+
+function parseChList(text) {
+  let hexByteArray = text.split(':');
+  let binByteArray = hexByteArray.map(hexByte => {
+    let binByte = hex2bin(hexByte);
+    return [...binByte].reverse().join(''); // Reverses to fix endian issue
+  });
+
+  let noGaps = binByteArray.join(''); // Combines all strings in array
+
+  let finalString = '';
+  let firstRange = true;
+  let seqStartIndex;
+  let currentSequence = false;
+
+  for (let i = 0; i < noGaps.length; i++) {
+    // If there's a current sequence and its the last digit or the end of a sequence (e.g. '0'), print a range to finalString
+    if (currentSequence && (noGaps.substring(i, i + 1) === '0' || i === noGaps.length - 1)) {
+      // Separate ranges with ':'
+      if (firstRange) firstRange = false;
+      else finalString += ':';
+
+      // If only one digit, just add it
+      if (seqStartIndex === i - 1) finalString += seqStartIndex.toString();
+      // If more than one, add a range
+      else finalString += seqStartIndex.toString() + '-' + (i - 1).toString();
+
+      currentSequence = false;
+    }
+    // If sequence is starting or continuing:
+    else if (noGaps.substring(i, i + 1) === '1') {
+      if (currentSequence === false) {
+        seqStartIndex = i;
+        currentSequence = true;
+      }
+    }
+  }
+  if (finalString === '') return 'none';
+  else return finalString;
+}
+
 module.exports = {
   parseConnectedDevices,
   parseDodagRoute,
@@ -122,4 +166,5 @@ module.exports = {
   canonicalIPtoExpandedIP,
   parseMacFilterList,
   parseNCPIPv6,
+  parseChList,
 };

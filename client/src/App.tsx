@@ -197,7 +197,10 @@ export default class App extends React.Component<AppProps, AppState> {
     let property: keyof NCPProperties;
     const keysToDelete: (keyof NCPProperties)[] = [];
     for (property in this.state.dirtyNCPProperties) {
-      let value = this.state.ncpProperties[property];
+      let value = this.state.dirtyNCPProperties[property];
+      if(value === undefined){
+        continue;
+      }
       try {
         const {wasSuccess} = await APIService.setProp(property, value);
         if (wasSuccess) {

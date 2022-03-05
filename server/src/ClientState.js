@@ -1,4 +1,4 @@
-const {parseMacFilterList, parseNCPIPv6} = require('./parsing.js');
+const {parseMacFilterList, parseNCPIPv6, parseChList} = require('./parsing.js');
 const {getPropDBUS, setPropDBUS} = require('./dbusCommands.js');
 const {appStateLogger} = require('./logger.js');
 const {observe, generate} = require('fast-json-patch');
@@ -85,6 +85,11 @@ function initializeSocketIOEvents(io) {
 async function getLatestProp(property) {
   let propValue = await getPropDBUS(property);
   switch (property) {
+    case 'unicastchlist':
+    case 'broadcastchlist':
+    case 'asyncchlist':
+      propValue = parseChList(propValue);
+      break;
     case 'macfilterlist':
       propValue = parseMacFilterList(propValue);
       break;
