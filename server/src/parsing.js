@@ -130,8 +130,41 @@ function parseChList(text) {
   });
 
   let noGaps = binByteArray.join(''); // Combines all strings in array
+  console.log('noGaps', noGaps);
 
-  return noGaps;
+  // return noGaps;
+
+  let finalString = '';
+  let firstRange = true;
+  let seqStartIndex;
+  let currentSequence = false;
+
+  for (let i = 0; i < noGaps.length; i++) {
+    // If there's a current sequence and its the last digit or the end of a sequence (e.g. '0'), print a range to finalString
+    if (currentSequence && (noGaps.substring(i, i + 1) === '0' || i === noGaps.length - 1)) {
+      // Separate ranges with ':'
+      if (firstRange) firstRange = false;
+      else finalString += ':';
+
+      // If only one digit, just add it
+      if (seqStartIndex === i - 1) finalString += seqStartIndex.toString();
+      // If more than one, add a range
+      else finalString += seqStartIndex.toString() + '-' + (i - 1).toString();
+
+      currentSequence = false;
+    }
+    // If sequence is starting or continuing:
+    else if (noGaps.substring(i, i + 1) === '1') {
+      if (currentSequence === false) {
+        seqStartIndex = i;
+        currentSequence = true;
+      }
+    }
+  }
+
+  console.log('finalString', finalString);
+  if (finalString === '') return 'none';
+  else return finalString;
 }
 
 module.exports = {
