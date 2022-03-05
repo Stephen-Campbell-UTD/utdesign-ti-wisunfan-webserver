@@ -129,8 +129,7 @@ export default class App extends React.Component<AppProps, AppState> {
     pingbursts: [],
     connected: false,
     ncpProperties: DEFAULT_NCP_PROPERTY_VALUES(),
-    // dirtyNCPProperties: {} as Partial<NCPProperties>,
-    dirtyNCPProperties: {} as NCPProperties,
+    dirtyNCPProperties: {} as Partial<NCPProperties>,
     tabView: TAB_VIEW.INVALID_HOST,
     theme: THEME.TI,
   };
@@ -197,11 +196,11 @@ export default class App extends React.Component<AppProps, AppState> {
   setNCPProperties = async () => {
     let property: keyof NCPProperties;
     const keysToDelete: (keyof NCPProperties)[] = [];
-
-    console.log('dirtyNCPProperties', JSON.stringify(this.state.dirtyNCPProperties));
-
     for (property in this.state.dirtyNCPProperties) {
       let value = this.state.dirtyNCPProperties[property];
+      if(value === undefined){
+        continue;
+      }
       try {
         const {wasSuccess} = await APIService.setProp(property, value);
         if (wasSuccess) {

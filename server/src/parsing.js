@@ -1,6 +1,3 @@
-const {info} = require('winston');
-const {appStateLogger} = require('./logger');
-
 /**
  * wfantund requires some ip addresses in an expanded format e.g
  * 2020:abcd:0000:0000:0212:4b00:14f8:2b8f
@@ -130,9 +127,6 @@ function parseChList(text) {
   });
 
   let noGaps = binByteArray.join(''); // Combines all strings in array
-  console.log('noGaps', noGaps);
-
-  // return noGaps;
 
   let finalString = '';
   let firstRange = true;
@@ -161,8 +155,6 @@ function parseChList(text) {
       }
     }
   }
-
-  console.log('finalString', finalString);
   if (finalString === '') return 'none';
   else return finalString;
 }
