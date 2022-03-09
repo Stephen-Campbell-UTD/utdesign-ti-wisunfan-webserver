@@ -54,6 +54,10 @@
   width: 80%;
 }
 
+.mac_filter_settings {
+  height: 574px;
+}
+
 .macfilterFlex {
   width: 100%;
   display: flex;

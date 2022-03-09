@@ -5,7 +5,7 @@ import Pane from './Pane';
 import {ThemedInput} from './ThemedInput';
 import ThemedLabel from './ThemedLabel';
 import StatusIndicator from './StatusIndicator';
-import {useCallback, useContext, useState} from 'react';
+import {useCallback, useContext, useEffect, useState} from 'react';
 import {AppContext} from '../Contexts';
 import produce from 'immer';
 import ThemedButton, {THEMED_BUTTON_TYPE} from './ThemedButton';
@@ -124,7 +124,7 @@ function MacFilterModeConfig(props: MacFilterModeConfigProps) {
     <div className="macfilterFlex">
       <ThemedLabel style={{fontSize: 14}}>Mode</ThemedLabel>
       <ThemedSelect
-        width="65%"
+        width="70%"
         fontSize={14}
         onChange={onChange}
         options={options}
@@ -537,11 +537,40 @@ function NetworkProperties(props: NetworkPropertiesProps) {
 }
 
 function MacFilterSettings(props: NCPProperties) {
+  const [macFilterList, setMacFilterList] = useState(props.macfilterlist);
+  // let [availFilters, setAvailFilters] = useState(10);
+
+  useEffect(() => {
+    setMacFilterList(props.macfilterlist);
+  }, [props.macfilterlist]);
+
+  const processMacFilters = (list: string[] | null) => {
+    if (list == null) {
+      return [''];
+    } else {
+      let result = [];
+      let availFilterCount = 0;
+
+      for (let i = 0; i < list.length; i++) {
+        if (list[i] !== '0000000000000000') {
+          result.push(list[i]);
+        } else {
+          // availFilterCount++;
+        }
+      }
+      // setAvailFilters(availFilterCount);
+      return result;
+    }
+  };
+
   return (
     <div className="config_properties_container">
       <MacFilterModeConfig value={props.macfiltermode} />
       <MacFilterUpdater />
-      <ThemedUnorderedList items={props.macfilterlist} />
+      <ThemedLabel style={{fontSize: 14, fontStyle: 'italic'}}>
+        {/* {availFilters} */}* filters available
+      </ThemedLabel>
+      <ThemedUnorderedList items={processMacFilters(macFilterList)} />
     </div>
   );
 }
@@ -588,7 +617,7 @@ export default function ConfigTab(props: ConfigTabProps) {
       </Pane>
 
       <Pane>
-        <div className="tile_container_full tile_container_common">
+        <div className="tile_container_full tile_container_common mac_filter_settings">
           <Tile style={{minHeight: 0}} title="Mac Filter Settings">
             <MacFilterSettings
               macfilterlist={props.ncpProperties.macfilterlist}
