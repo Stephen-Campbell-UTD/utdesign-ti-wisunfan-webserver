@@ -53,3 +53,13 @@
   row-gap: 25px;
   width: 80%;
 }
+
+.macfilterFlex {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-around;
+  align-content: flex-start;
+  gap: 10px;
+}

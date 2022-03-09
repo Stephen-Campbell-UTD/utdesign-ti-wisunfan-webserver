@@ -121,10 +121,10 @@ function MacFilterModeConfig(props: MacFilterModeConfigProps) {
 
   const selectedOption = options.find(option => option.value === props.value);
   return (
-    <div className="config_label">
-      <ThemedLabel style={{fontSize: 14}}>Mac Filter Mode</ThemedLabel>
+    <div className="macfilterFlex">
+      <ThemedLabel style={{fontSize: 14}}>Mode</ThemedLabel>
       <ThemedSelect
-        width="45%"
+        width="65%"
         fontSize={14}
         onChange={onChange}
         options={options}
@@ -475,9 +475,10 @@ function MacFilterUpdater() {
   };
 
   return (
-    <div>
+    <div className="macfilterFlex">
+      <ThemedLabel style={{fontSize: 14}}>Target Filter</ThemedLabel>
       <ThemedInput
-        style={{width: '90%', fontSize: 14, height: 30}}
+        style={{width: '60%', fontSize: 14, height: 30}}
         inputStyle={{height: 30}}
         onChange={handleChange}
         value={macfilter}
@@ -535,6 +536,16 @@ function NetworkProperties(props: NetworkPropertiesProps) {
   );
 }
 
+function MacFilterSettings(props: NCPProperties) {
+  return (
+    <div className="config_properties_container">
+      <MacFilterModeConfig value={props.macfiltermode} />
+      <MacFilterUpdater />
+      <ThemedUnorderedList items={props.macfilterlist} />
+    </div>
+  );
+}
+
 interface ConfigTabProps {
   ncpProperties: NCPProperties;
   dirtyNCPProperties: Partial<NCPProperties>;
@@ -572,6 +583,17 @@ export default function ConfigTab(props: ConfigTabProps) {
               stackUp={props.ncpProperties['Stack:Up']}
               interfaceUp={props.ncpProperties['Interface:Up']}
             ></NCPStatus>
+          </Tile>
+        </div>
+      </Pane>
+
+      <Pane>
+        <div className="tile_container_full tile_container_common">
+          <Tile style={{minHeight: 0}} title="Mac Filter Settings">
+            <MacFilterSettings
+              macfilterlist={props.ncpProperties.macfilterlist}
+              macfiltermode={props.ncpProperties.macfiltermode}
+            />
           </Tile>
         </div>
       </Pane>
