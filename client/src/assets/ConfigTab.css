@@ -55,7 +55,7 @@
 }
 
 .mac_filter_settings {
-  height: 574px;
+  height: 555px;
 }
 
 .macfilterFlex {
@@ -66,4 +66,5 @@
   justify-content: space-around;
   align-content: flex-start;
   gap: 10px;
+  margin-top: 4px;
 }

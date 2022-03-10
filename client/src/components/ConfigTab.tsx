@@ -538,10 +538,10 @@ function NetworkProperties(props: NetworkPropertiesProps) {
 
 function MacFilterSettings(props: NCPProperties) {
   const [macFilterList, setMacFilterList] = useState(props.macfilterlist);
-  // let [availFilters, setAvailFilters] = useState(10);
+  let [availFilters, setAvailFilters] = useState(10);
 
   useEffect(() => {
-    setMacFilterList(props.macfilterlist);
+    setMacFilterList(processMacFilters(props.macfilterlist));
   }, [props.macfilterlist]);
 
   const processMacFilters = (list: string[] | null) => {
@@ -555,10 +555,10 @@ function MacFilterSettings(props: NCPProperties) {
         if (list[i] !== '0000000000000000') {
           result.push(list[i]);
         } else {
-          // availFilterCount++;
+          availFilterCount++;
         }
       }
-      // setAvailFilters(availFilterCount);
+      setAvailFilters(availFilterCount);
       return result;
     }
   };
@@ -568,9 +568,9 @@ function MacFilterSettings(props: NCPProperties) {
       <MacFilterModeConfig value={props.macfiltermode} />
       <MacFilterUpdater />
       <ThemedLabel style={{fontSize: 14, fontStyle: 'italic'}}>
-        {/* {availFilters} */}* filters available
+        {availFilters} filters available
       </ThemedLabel>
-      <ThemedUnorderedList items={processMacFilters(macFilterList)} />
+      <ThemedUnorderedList items={macFilterList} />
     </div>
   );
 }

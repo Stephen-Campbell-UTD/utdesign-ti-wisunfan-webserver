@@ -62,6 +62,7 @@ img {
 
 .tile_container_common {
   width: 92%;
+  min-width: 333px;
 }
 
 .tile_container_half {
