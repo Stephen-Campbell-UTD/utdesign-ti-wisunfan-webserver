@@ -290,7 +290,6 @@ function ConfigProperties(props: ConfigPropertiesProps) {
         value={props.dirtyNCPProperties['bcchfunction'] || props.ncpProperties['bcchfunction']}
         isDisabled={stackUp}
       />
-      <MacFilterModeConfig value={props.ncpProperties['macfiltermode']} />
       <ConfigPropertyTextInput
         name="BR NodeType"
         id="Network:NodeType"
@@ -570,7 +569,9 @@ function MacFilterSettings(props: NCPProperties) {
       <ThemedLabel style={{fontSize: 14, fontStyle: 'italic'}}>
         {availFilters} filters available
       </ThemedLabel>
-      <ThemedUnorderedList items={macFilterList} />
+      <div className="macfilterList">
+        <ThemedUnorderedList items={macFilterList} />
+      </div>
     </div>
   );
 }
@@ -617,7 +618,7 @@ export default function ConfigTab(props: ConfigTabProps) {
       </Pane>
 
       <Pane>
-        <div className="tile_container_full tile_container_common mac_filter_settings">
+        <div className="tile_container_full tile_container_common macfilterSettings">
           <Tile style={{minHeight: 0}} title="Mac Filter Settings">
             <MacFilterSettings
               macfilterlist={props.ncpProperties.macfilterlist}
