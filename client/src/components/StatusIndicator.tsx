@@ -1,13 +1,15 @@
 import React, {useContext} from 'react';
 import {Color, ColorScheme, THEME, ThemeContext} from '../ColorScheme';
 import {ComponentThemeImplementations} from '../utils';
+import '../assets/StatusIndicator.css'
 
 interface StatusIndicatorProps {
-  isGoodStatus: boolean;
+  isGoodStatus: boolean | null;
 }
 interface StatusIndicatorTheme {
   goodColor: Color;
   badColor: Color;
+  loadingColor: Color;
   style: React.CSSProperties;
 }
 const statusIndicatorThemeImplementations =
@@ -15,6 +17,7 @@ const statusIndicatorThemeImplementations =
 const tiStatusIndicatorTheme = {
   goodColor: ColorScheme.getColor('green', THEME.TI),
   badColor: ColorScheme.getColor('red', THEME.TI),
+  loadingColor: ColorScheme.getColor('gray', THEME.TI),
   style: {
     width: 28,
     height: 28,
@@ -26,6 +29,7 @@ statusIndicatorThemeImplementations.set(THEME.TI, tiStatusIndicatorTheme);
 const gruvboxStatusIndicatorTheme = {
   goodColor: ColorScheme.getColor('green', THEME.GRUVBOX),
   badColor: ColorScheme.getColor('red', THEME.GRUVBOX),
+  loadingColor: ColorScheme.getColor('gray', THEME.GRUVBOX),
   style: {
     width: 22,
     height: 22,
@@ -35,15 +39,21 @@ const gruvboxStatusIndicatorTheme = {
 };
 statusIndicatorThemeImplementations.set(THEME.GRUVBOX, gruvboxStatusIndicatorTheme);
 
-export default function StatusIndicator(props: StatusIndicatorProps) {
+export default function StatusIndicator({isGoodStatus}: StatusIndicatorProps) {
   const theme = useContext(ThemeContext);
-  let {goodColor, badColor, style} = statusIndicatorThemeImplementations.get(theme);
-
-  const statusColor = props.isGoodStatus ? goodColor : badColor;
+  let {goodColor, badColor, loadingColor, style} = statusIndicatorThemeImplementations.get(theme);
+  let statusColor;
+  if (isGoodStatus === null){
+    statusColor =  loadingColor
+  }else if(isGoodStatus){
+    statusColor =  goodColor
+  }else{
+    statusColor =  badColor
+  }
   style = {
     backgroundColor: statusColor,
     ...style,
   };
 
-  return <div style={style}></div>;
+  return <div className={`statusIndicator ${isGoodStatus===null ? "loadingStatus": ""}`} style={style}></div>;
 }

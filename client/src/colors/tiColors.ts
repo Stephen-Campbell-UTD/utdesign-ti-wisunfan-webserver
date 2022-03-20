@@ -12,6 +12,7 @@ const tiColorScheme = {
   redDark: '#AE0000',
   green: '#44BB55',
   yellow: '#fabd2f',
+  yellowDark: '#d79921',
   orange: '#FE8019',
   blue: '#007C8C',
   // purple: gruvboxColors["gruvbox-light-purple"],

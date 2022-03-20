@@ -1,35 +1,46 @@
-import {useContext} from 'react';
-import {ColorScheme, ThemeContext, THEME} from '../ColorScheme';
-import '../assets/Pane.css';
-import {ComponentThemeImplementations} from '../utils';
+import { useContext } from "react";
+import { ColorScheme, THEME, ThemeContext } from "../ColorScheme";
+import { ComponentThemeImplementations } from "../utils";
+
+
+interface PaneContainerTheme {
+  paneContainerStyle: React.CSSProperties;
+}
+const paneThemeImplementations = new ComponentThemeImplementations<PaneContainerTheme>();
+const tiPaneContainerTheme = {
+  paneContainerStyle: {
+    backgroundColor: 'rgba(0,0,0,0)',
+  },
+};
+paneThemeImplementations.set(THEME.TI, tiPaneContainerTheme);
+const gruvboxPaneContainerTheme = {
+  paneContainerStyle: {
+    backgroundColor: ColorScheme.getColor('bg1', THEME.GRUVBOX),
+    borderRadius: 10,
+  },
+};
+paneThemeImplementations.set(THEME.GRUVBOX, gruvboxPaneContainerTheme);
+
 
 interface PaneProps {
   children: React.ReactNode;
   style?: React.CSSProperties;
 }
 
-interface PaneTheme {
-  paneStyle: React.CSSProperties;
-}
-const paneThemeImplementations = new ComponentThemeImplementations<PaneTheme>();
-const tiPaneTheme = {
-  paneStyle: {
-    backgroundColor: 'rgba(0,0,0,0)',
-  },
-};
-paneThemeImplementations.set(THEME.TI, tiPaneTheme);
-const gruvboxPaneTheme = {
-  paneStyle: {
-    backgroundColor: ColorScheme.getColor('bg1', THEME.GRUVBOX),
-  },
-};
-paneThemeImplementations.set(THEME.GRUVBOX, gruvboxPaneTheme);
 
 export default function Pane(props: PaneProps) {
   const theme = useContext(ThemeContext);
-  const {paneStyle} = paneThemeImplementations.get(theme);
+  const {paneContainerStyle} = paneThemeImplementations.get(theme);
   return (
-    <div className="pane" style={{...paneStyle, ...props.style}}>
+    <div style={{
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingBottom: 30,
+    ...paneContainerStyle,
+       ...props.style}}>
       {props.children}
     </div>
   );

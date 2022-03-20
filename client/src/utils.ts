@@ -1,3 +1,5 @@
+import {APIService} from './APIService';
+import {App, NCPProperties} from './App';
 import {THEME} from './ColorScheme';
 
 function getScrollBarWidth(): number {
@@ -218,3 +220,26 @@ export function debounce(func: Function, timeout: number = 300) {
 // let y: KeysMatching<M, string> = 'b';
 // let z: KeysMatching<M, string> = 'c';
 export type KeysMatching<T, V> = {[K in keyof T]-?: T[K] extends V ? K : never}[keyof T];
+
+export function numToStringNullPreserving(num: number | null) {
+  //converts number to string
+  // if num is actually null it will return null
+  if (num === null) {
+    return null;
+  }
+  return num.toString(10);
+}
+
+export function setNCPPropertyGenerator(property: keyof NCPProperties, isNum: boolean = false) {
+  return async (app: App, value: string) => {
+    try {
+      await APIService.setProp(property, isNum ? parseInt(value, 10) : value);
+    } catch (e) {
+      if (app === null) {
+        throw Error('App null');
+      }
+      app.receivedNetworkError(e);
+      return;
+    }
+  };
+}

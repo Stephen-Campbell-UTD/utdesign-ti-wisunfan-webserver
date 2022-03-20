@@ -1,4 +1,4 @@
-import React, {useContext} from 'react';
+import React, {CSSProperties, useContext} from 'react';
 import {Color, ColorScheme, THEME, ThemeContext} from '../ColorScheme';
 import '../assets/ArcBar.css';
 import {ComponentThemeImplementations} from '../utils';
@@ -37,6 +37,7 @@ ArcBarThemeImplementions.set(THEME.GRUVBOX, gruvboxArcBarTheme);
 interface ArcBarProps {
   /** value for color taken from percentFull */
   colorThresholds: ColorThresholds;
+  style?: CSSProperties;
   /** value in [0,1] */
   percentFull: number;
   maxLabel: string;
@@ -58,15 +59,8 @@ export default function ArcBar(props: ArcBarProps) {
     strokeDashoffset: -1 * totalArcLength * (1 - props.percentFull),
   };
   return (
-    <div className="arc_bar_container">
-      <svg
-        className="arc_bar"
-        width="144"
-        height="77"
-        viewBox="0 0 144 77"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
+    <div className="arc_bar_container" style={props.style}>
+      <svg className="arc_bar" viewBox="0 0 144 77" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g filter={isShadow ? `url(#arc_bar_shadow)` : undefined}>
           <path
             style={{stroke: backgroundColor}}

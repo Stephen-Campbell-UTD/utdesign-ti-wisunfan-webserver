@@ -5,10 +5,11 @@ import {ColorScheme, THEME, ThemeContext} from '../ColorScheme';
 import CheckBox from './CheckBox';
 import {ThemedInput} from './ThemedInput';
 import {useContext} from 'react';
-import {IPAddressInfo, NumberOfPacketsQuantity} from '../types';
+import {IPAddressInfo, NumberOfPacketsQuantity, Pingburst} from '../types';
 import {APIService} from '../APIService';
 import {ComponentThemeImplementations} from '../utils';
 import ThemedButton, {THEMED_BUTTON_TYPE} from './ThemedButton';
+import {PingJobsButton} from './PingJobsButton';
 
 interface NumberOfPacketsProps {
   numPackets: NumberOfPacketsQuantity;
@@ -71,6 +72,7 @@ function NumberOfPackets(props: NumberOfPacketsProps) {
 
 interface PingConfigurationProps {
   ipAddressInfoArray: IPAddressInfo[];
+  pingbursts: Pingburst[];
 }
 
 export default function PingConfiguration(props: PingConfigurationProps) {
@@ -126,7 +128,12 @@ export default function PingConfiguration(props: PingConfigurationProps) {
   let {labelStyle} = pingConfigThemeImplementations.get(theme);
 
   return (
-    <div className="ping_form_container">
+    <div className="ping_form_container" style={{position: 'relative', paddingTop: 15}}>
+      <PingJobsButton
+        style={{position: 'absolute', right: 10, top: 10}}
+        ipAddressInfoArray={props.ipAddressInfoArray}
+        pingbursts={props.pingbursts}
+      />
       <label style={labelStyle} className="ping_form_label">
         Packet Size [B]
       </label>

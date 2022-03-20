@@ -3,14 +3,16 @@
   flex-direction: column;
   width: 100%;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: center;
+  row-gap: 10px;
   flex-grow: 1;
+  padding-bottom: 20px;
   transform-origin: center;
-  transform: scale(1.15);
 }
 
 .at_a_glance_grade {
-  font-size: 36px;
-  margin: 0px;
+  font-size: 40px;
+  margin-top: 20px;
+  margin-bottom: 0;
   font-weight: 500;
 }

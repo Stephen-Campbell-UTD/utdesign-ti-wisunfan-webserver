@@ -101,7 +101,8 @@ const gruvboxFlexTableTheme = {
     color: ColorScheme.getColor('white', THEME.GRUVBOX),
     backgroundColor: ColorScheme.getColor('bg2', THEME.GRUVBOX),
     boxShadow: '0px 1px 14px rgba(0, 0, 0, 0.3)',
-    borderRadius: '0 0 9 9',
+    borderBottomRightRadius: 9,
+    borderBottomLeftRadius: 9,
   },
   bodyRowStyle: {
     borderBottom: `${dividerHeight}px solid ${ColorScheme.getColor('bg1', THEME.GRUVBOX)}`,

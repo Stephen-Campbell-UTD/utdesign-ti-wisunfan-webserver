@@ -99,6 +99,7 @@ export default function AtAGlance(props: AtAGlanceProps) {
         maxLabel="100%"
         valueText={`${(successRate * 100).toFixed(1)}%`}
         valueDescription="Success Rate"
+        style={{width: '55%'}}
         percentFull={successRate}
         colorThresholds={successThreshold}
       />
@@ -107,6 +108,7 @@ export default function AtAGlance(props: AtAGlanceProps) {
         maxLabel={`${maxDuration}`}
         valueText={`${Math.floor(averageDuration)}ms`}
         valueDescription="Average Delay"
+        style={{width: '55%'}}
         percentFull={durationPercent}
         colorThresholds={delayThreshold}
       />

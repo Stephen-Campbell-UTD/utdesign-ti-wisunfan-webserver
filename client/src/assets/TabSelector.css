@@ -1,4 +1,6 @@
 .tab_selector {
+  margin-top: 0px;
+  margin-bottom: 0px;
   font-size: 18px;
   cursor: pointer;
   user-select: none;

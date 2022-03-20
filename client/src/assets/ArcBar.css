@@ -1,11 +1,10 @@
 .arc_bar_container {
   position: relative;
-  height: 78px;
-  width: 144px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
+  margin-top: 28%;
 }
 
 .arc_bar {
@@ -26,7 +25,7 @@
 }
 
 .arc_bar_label_top {
-  font-size: 24px;
+  font-size: 150%;
   font-family: inherit;
   margin-top: 0px;
   margin-bottom: 0px;
@@ -34,7 +33,7 @@
 }
 
 .arc_bar_label_bottom {
-  font-size: 14px;
+  font-size: 90%;
   font-family: inherit;
   font-weight: 500;
   margin-top: 0px;

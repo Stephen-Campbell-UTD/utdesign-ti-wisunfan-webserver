@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import React, {useCallback, useContext} from 'react';
+import React, {ReactEventHandler, useCallback, useContext} from 'react';
 import '../assets/ThemedInput.css';
 import {ColorScheme, THEME, ThemeContext} from '../ColorScheme';
 import {ComponentThemeImplementations} from '../utils';
@@ -67,6 +67,7 @@ export interface ThemedInputProps {
   //if value is null the input will go into a "loading" state
   value: string | null;
   onChange: (newValue: string) => void;
+  onBlur?: ReactEventHandler;
 }
 
 export function ThemedInput({
@@ -76,6 +77,7 @@ export function ThemedInput({
   inputStyle = {},
   value = null,
   onChange = () => {},
+  onBlur,
 }: ThemedInputProps) {
   const theme = useContext(ThemeContext);
   let {inputStyle: themeInputStyle} = themedInputThemeImplementations.get(theme);
@@ -88,13 +90,14 @@ export function ThemedInput({
     <div style={{position: 'relative', ...style}} className={className}>
       {isLoading && <LoadingBars style={loadingBarsStyle} />}
       <input
-        css={{height: 26, ...inputStyle, ...(themeInputStyle as any)}}
+        css={{fontVariant: 'lining-nums', height: 26, ...inputStyle, ...(themeInputStyle as any)}}
         disabled={isDisabled || isLoading}
         className={'themed_input '}
         type="text"
         spellCheck="false"
         value={value === null ? '' : value}
         onChange={onChangeHandler}
+        onBlur={onBlur}
       />
     </div>
   );

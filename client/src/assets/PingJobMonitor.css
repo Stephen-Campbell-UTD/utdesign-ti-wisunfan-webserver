@@ -1,7 +1,0 @@
-.ping_job_monitor_container {
-  position: absolute;
-  top: 15vh;
-  left: calc(100vw - 50vw - 5.9427vw);
-  width: 50vw;
-  z-index: 1;
-}
