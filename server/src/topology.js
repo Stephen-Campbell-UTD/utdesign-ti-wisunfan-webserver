@@ -22,7 +22,6 @@ function routesToGraph(routes, linkQualities) {
       edge.source = route[i];
       edge.target = route[i + 1];
       edge.id = `${edge.source}->${edge.target}`;
-
       edge.quality = linkQualities[edge.id];
 
       if (!edges.some(otherEdge => otherEdge.data.id === edge.id)) {
@@ -87,9 +86,62 @@ async function getLatestTopology(ClientState) {
       );
     }
 
-    let quality = Math.ceil(Math.random() * 100);
-    let linkQualities = {'2020:abcd::212:4b00:14f9:430d->2020:abcd::212:4b00:14f8:2af0': quality};
-    const graph = routesToGraph(routes, linkQualities);
+    let quality1 = Math.ceil(Math.random() * 100);
+    let quality2 = Math.ceil(Math.random() * 100);
+    let quality3 = Math.ceil(Math.random() * 100);
+    // let linkQualities = {'2020:abcd::212:4b00:14f9:430d->2020:abcd::212:4b00:14f8:2af0': quality};
+    // const graph = routesToGraph(routes, linkQualities);
+
+    const graph = {
+      nodes: [
+        {
+          data: {
+            id: 'aaaa::aaaa',
+          },
+        },
+        {
+          data: {
+            id: 'bbbb::bbbb',
+          },
+        },
+        {
+          data: {
+            id: 'cccc::cccc',
+          },
+        },
+        {
+          data: {
+            id: 'dddd::dddd',
+          },
+        },
+      ],
+      edges: [
+        {
+          data: {
+            source: 'aaaa::aaaa',
+            target: 'bbbb::bbbb',
+            id: 'aaaa::aaaa->bbbb::bbbb',
+            quality: quality1,
+          },
+        },
+        {
+          data: {
+            source: 'aaaa::aaaa',
+            target: 'cccc::cccc',
+            id: 'aaaa::aaaa->cccc::cccc',
+            quality: quality2,
+          },
+        },
+        {
+          data: {
+            source: 'cccc::cccc',
+            target: 'dddd::dddd',
+            id: 'cccc::cccc->dddd::dddd',
+            quality: quality3,
+          },
+        },
+      ],
+    };
 
     return {numConnected, connectedDevices, routes, graph};
   } catch (e) {
