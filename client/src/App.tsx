@@ -3,7 +3,6 @@ import './App.css';
 import {THEME, ColorScheme, ThemeContext} from './ColorScheme';
 import produce from 'immer';
 import ThemeToggle from './components/ThemeToggle';
-import SettingsButton from './components/SettingsButton';
 import {KeysMatching, nicknameGenerator} from './utils';
 import {PingJobsButton} from './components/PingJobsButton';
 import TabSelector from './components/TabSelector';
@@ -17,6 +16,7 @@ import InvalidHostMessage from './components/InvalidHostMessage';
 import {io} from 'socket.io-client';
 import {applyPatch, deepClone} from 'fast-json-patch';
 import {WritableDraft} from 'immer/dist/types/types-external';
+import {DashTitle} from './components/DashTitle';
 
 export function getIPAddressInfoByIP(ipAddressInfoArray: IPAddressInfo[], ip: string) {
   for (const ipAddressInfo of ipAddressInfoArray) {
@@ -38,23 +38,23 @@ export interface NCPProperties {
   'NCP:Region': string | null;
   'NCP:ModeID': number | null;
   unicastchlist: string | null;
+  ucdwellinterval: number | null;
+  ucchfunction: number | null;
   broadcastchlist: string | null;
+  bcdwellinterval: number | null;
+  bcinterval: number | null;
+  bcchfunction: number | null;
   asyncchlist: string | null;
   chspacing: string | null;
   ch0centerfreq: string | null;
   'Network:Panid': string | null;
-  bcdwellinterval: number | null;
-  ucdwellinterval: number | null;
-  bcinterval: number | null;
-  ucchfunction: number | null;
-  bcchfunction: number | null;
   macfilterlist: string[] | null;
   macfiltermode: number | null;
   'Interface:Up': boolean | null;
   'Stack:Up': boolean | null;
   'Network:NodeType': string | null;
   'Network:Name': string | null;
-  'IPv6:AllAddresses': BorderRouterIPEntry[] | null;
+  'IPv6:AllAddresses': BorderRouterIPEntry[];
 }
 export type NCPStringProperties = KeysMatching<NCPProperties, string | null>;
 export type NCPNumberProperties = KeysMatching<NCPProperties, number | null>;
@@ -98,7 +98,7 @@ enum TAB_VIEW {
   INVALID_HOST = 'Invalid Host',
 }
 
-interface AppState {
+export interface AppState {
   readonly topology: Topology;
   readonly ipAddressInfoArray: IPAddressInfo[];
   readonly pingbursts: Pingburst[];
@@ -120,9 +120,10 @@ const DEFAULT_TOPOLOGY = () => {
 };
 interface AppProps {}
 
-export default class App extends React.Component<AppProps, AppState> {
+export class App extends React.Component<AppProps, AppState> {
   /** NCP Properties that are compared to when properties for setProps.  */
   cachedNCPProperties: NCPProperties | null = null;
+  lastResetDate = -Infinity;
   state = {
     topology: DEFAULT_TOPOLOGY(),
     ipAddressInfoArray: [],
@@ -198,7 +199,7 @@ export default class App extends React.Component<AppProps, AppState> {
     const keysToDelete: (keyof NCPProperties)[] = [];
     for (property in this.state.dirtyNCPProperties) {
       let value = this.state.dirtyNCPProperties[property];
-      if(value === undefined){
+      if (value === undefined) {
         continue;
       }
       try {
@@ -246,6 +247,16 @@ export default class App extends React.Component<AppProps, AppState> {
         return TAB_VIEW.INVALID_HOST;
       }
       return previousTabView;
+    }
+  };
+
+  resetNCP = async () => {
+    try {
+      await APIService.getReset();
+      this.lastResetDate = Date.now();
+    } catch (e) {
+      //network error
+      this.receivedNetworkError(e);
     }
   };
 
@@ -329,10 +340,6 @@ export default class App extends React.Component<AppProps, AppState> {
     body.style.backgroundColor = ColorScheme.getColor('bg0', this.state.theme);
     this.setScrollbarToCurrentTheme();
     this.setColorSchemeToCSSVars();
-    const dashTitleContainerStyle = {
-      backgroundColor:
-        this.state.theme === 'ti' ? ColorScheme.getColor('red', THEME.TI) : 'rgba(0,0,0,0)',
-    };
 
     let currentTab = null;
     switch (this.state.tabView) {
@@ -366,49 +373,35 @@ export default class App extends React.Component<AppProps, AppState> {
     return (
       <ThemeContext.Provider value={this.state.theme}>
         <AppContext.Provider value={this}>
-          <div className="top_vstack">
-            <div className="dash_title_container" style={dashTitleContainerStyle}>
-              <h1 className="dash_title">Your Wi-SUN Network</h1>
-              <div
-                style={{
-                  marginRight: '5.9427vw',
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'center',
+          <DashTitle>
+            {this.state.connected && (
+              <TabSelector
+                name={TAB_VIEW.MONITOR}
+                isSelected={this.state.tabView === TAB_VIEW.MONITOR}
+                selectTab={() => {
+                  this.setTab(TAB_VIEW.MONITOR);
                 }}
-              >
-                {this.state.connected && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      columnGap: '20px',
-                      marginRight: 40,
-                    }}
-                  >
-                    <TabSelector
-                      name={TAB_VIEW.MONITOR}
-                      isSelected={this.state.tabView === TAB_VIEW.MONITOR}
-                      selectTab={() => {
-                        this.setTab(TAB_VIEW.MONITOR);
-                      }}
-                    />
-                    <TabSelector
-                      name={TAB_VIEW.CONFIG}
-                      isSelected={this.state.tabView === TAB_VIEW.CONFIG}
-                      selectTab={() => {
-                        this.setTab(TAB_VIEW.CONFIG);
-                      }}
-                    />
-                  </div>
-                )}
-                <ThemeToggle handleNewTheme={(theme: THEME) => this.setState({theme})} />
-                <PingJobsButton {...this.state} />
-                <SettingsButton {...this.state} />
-              </div>
+              />
+            )}
+            {this.state.connected && (
+              <TabSelector
+                name={TAB_VIEW.CONFIG}
+                isSelected={this.state.tabView === TAB_VIEW.CONFIG}
+                selectTab={() => {
+                  this.setTab(TAB_VIEW.CONFIG);
+                }}
+              />
+            )}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+              }}
+            >
+              <ThemeToggle handleNewTheme={(theme: THEME) => this.setState({theme})} />
             </div>
-            {currentTab}
-          </div>
+          </DashTitle>
+          <div className="top_vstack">{currentTab}</div>
         </AppContext.Provider>
       </ThemeContext.Provider>
     );

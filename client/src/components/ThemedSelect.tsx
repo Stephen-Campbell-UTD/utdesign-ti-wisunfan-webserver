@@ -1,4 +1,4 @@
-import {useContext} from 'react';
+import {FocusEventHandler, useContext} from 'react';
 import Select, {StylesConfig} from 'react-select';
 import {Color, ColorScheme, THEME, ThemeContext} from '../ColorScheme';
 import {ComponentThemeImplementations} from '../utils';
@@ -36,7 +36,7 @@ const gruvboxThemedSelectTheme = {
 };
 themedSelectThemeImplementations.set(THEME.GRUVBOX, gruvboxThemedSelectTheme);
 
-type OptionType = {
+export type OptionType = {
   label: string;
   value: any;
 };
@@ -49,21 +49,9 @@ interface ThemedSelectProps {
   defaultValue?: any;
   defaultInputValue?: any;
   onChange?: (newValue: any) => void;
+  isDisabled?: boolean;
+  onBlur?: FocusEventHandler<HTMLInputElement>;
 }
-
-const loadingBarsStyle = {
-  position: 'absolute' as 'absolute',
-  height: '80%',
-  marginLeft: 'auto',
-  marginRight: 'auto',
-  marginTop: 'auto',
-  marginBottom: 'auto',
-  left: 0,
-  right: 0,
-  top: 0,
-  bottom: 0,
-  // zIndex: 10,
-};
 
 export function ThemedSelect(props: ThemedSelectProps) {
   const theme = useContext(ThemeContext);
@@ -86,7 +74,7 @@ export function ThemedSelect(props: ThemedSelectProps) {
         display: 'flex' as 'flex',
         flexDirection: 'row' as 'row',
         justifyContent: 'center' as 'center',
-        fontSize: props.fontSize,
+        fontSize: props.fontSize || 14,
         alignItems: 'center',
         borderTop: '1px solid transparent',
         height: 30,
@@ -121,7 +109,7 @@ export function ThemedSelect(props: ThemedSelectProps) {
       const style = {
         ...provided,
         color: textColor,
-        fontSize: props.fontSize,
+        fontSize: props.fontSize || 14,
         opacity,
         transition,
         backgroundColor: state.isSelected ? optionSelectedBackgroundColor : backgroundColor,
@@ -136,10 +124,29 @@ export function ThemedSelect(props: ThemedSelectProps) {
       return style;
     },
   };
-  const isLoading = props.value === null;
+  const isLoading = !(props.value && props.value.value !== null);
   return (
     <div style={{position: 'relative', width}}>
-      {isLoading && <LoadingBars style={loadingBarsStyle} />}
+      {isLoading && (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            backgroundColor,
+            zIndex: 1,
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <LoadingBars style={{height: '80%', zIndex: 1}} />
+        </div>
+      )}
       <Select
         styles={customStyles}
         options={props.options}
@@ -148,7 +155,13 @@ export function ThemedSelect(props: ThemedSelectProps) {
         onChange={props.onChange}
         defaultInputValue={props.defaultInputValue}
         defaultValue={props.defaultValue}
+        isDisabled={props.isDisabled}
+        onBlur={props.onBlur}
       />
     </div>
   );
+}
+
+export function findOptionByValue(options: OptionType[], value: any) {
+  return options.find(option => option.value === value);
 }

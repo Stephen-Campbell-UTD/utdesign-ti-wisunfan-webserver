@@ -100,7 +100,7 @@ async function getLatestProp(property) {
       propValue = Buffer.from(propValue).toString('hex');
       break;
     case 'Network:Panid':
-      propValue = propValue.toString(16).toUpperCase();
+      propValue = `0x${propValue.toString(16).toUpperCase().padStart(4, '0')}`;
       break;
   }
   return propValue;

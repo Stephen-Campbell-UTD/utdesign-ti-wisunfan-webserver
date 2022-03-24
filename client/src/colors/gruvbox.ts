@@ -57,6 +57,7 @@ const colorScheme = {
   aqua: gruvboxColors['gruvbox-light-aqua'],
   gray: gruvboxColors['gruvbox-gray'],
   orange: gruvboxColors['gruvbox-orange'],
+  yellowDark: gruvboxColors['gruvbox-yellow'],
 };
 
 export default colorScheme;

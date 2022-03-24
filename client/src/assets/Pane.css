@@ -1,9 +1,0 @@
-.pane {
-  width: 44.4vw;
-  min-height: 1100px;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-}

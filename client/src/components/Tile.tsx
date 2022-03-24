@@ -45,13 +45,14 @@ const tiTileTheme = {
   surfaceStyle: {
     backgroundColor: ColorScheme.getColor('bg2', THEME.TI),
     borderTop: `3px solid ${ColorScheme.getColor('red', THEME.TI)}`,
-    boxShadow: '0px 1px 14px rgba(0, 0, 0, 0.3)',
+    boxShadow: '0px 0px 14px rgba(0, 0, 0, 0.3)',
     borderRadius: 0,
   },
 };
 tileThemeImplementations.set(THEME.TI, tiTileTheme);
 const gruvboxTileTheme = {
   surfaceStyle: {
+    borderTop: `3px solid rgba(0,0,0,0)`,
     backgroundColor: ColorScheme.getColor('bg2', THEME.GRUVBOX),
     borderRadius: 10,
   },
@@ -64,11 +65,17 @@ export default function Tile(props: TileProps) {
   surfaceStyle = {...surfaceStyle, ...props.style};
 
   return (
-    <React.Fragment>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+      }}
+    >
       {!props.omitHeader && <TileHeader title={props.title} />}
       <div style={surfaceStyle} className="tile">
         {props.children}
       </div>
-    </React.Fragment>
+    </div>
   );
 }

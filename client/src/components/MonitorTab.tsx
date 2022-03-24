@@ -7,6 +7,8 @@ import IPAddressTable from './IPAddressTable';
 import Topology from './Topology';
 import '../App.css';
 import {CytoscapeGraph, IPAddressInfo, Pingburst} from '../types';
+import {PaneContainer} from './PaneContainer';
+import {TileColumns} from './TileColumns';
 
 interface MonitorTabProps {
   ipSelectionHandler: (ip: string, newVal: boolean) => void;
@@ -17,42 +19,46 @@ interface MonitorTabProps {
 
 export default function MonitorTab(props: MonitorTabProps) {
   return (
-    <div className="pane_container" style={{columnGap: '2.87vw'}}>
-      <Pane>
-        <div className="tile_container_full tile_container_common">
-          <Tile title="Topology">
-            <Topology
-              ipSelectionHandler={props.ipSelectionHandler}
-              ipAddressInfoArray={props.ipAddressInfoArray}
-              elements={props.graph}
-            />
-          </Tile>
-        </div>
-        <div className="tile_container_full tile_container_common">
-          <TileHeader title="IP Addresses" />
-          <IPAddressTable
+    <PaneContainer
+      maxColumns={2}
+      columnWidthMinMax={{min: 530, max: 650}}
+      elementOrdering={[
+        [[0, 1, 2, 3]],
+        [
+          [0, 1],
+          [2, 3],
+        ],
+      ]}
+      gutterWidth={20}
+      style={{width: '91.67vw'}}
+    >
+      <div className="tile_container_full tile_container_common">
+        <Tile title="Topology">
+          <Topology
             ipSelectionHandler={props.ipSelectionHandler}
             ipAddressInfoArray={props.ipAddressInfoArray}
+            elements={props.graph}
           />
-        </div>
-      </Pane>
-      <Pane>
-        <div className="tile_container_hstack tile_container_common">
-          <div className="tile_container_half">
-            <Tile title="Ping Config">
-              <PingConfig ipAddressInfoArray={props.ipAddressInfoArray} />
-            </Tile>
-          </div>
-          <div className="tile_container_half">
-            <Tile title="At A Glance">
-              <AtAGlance {...props} />
-            </Tile>
-          </div>
-        </div>
-        <div className="tile_container_full tile_container_common">
-          <Monitor {...props} />
-        </div>
-      </Pane>
-    </div>
+        </Tile>
+      </div>
+      <div className="tile_container_full tile_container_common">
+        <TileHeader title="IP Addresses" />
+        <IPAddressTable
+          ipSelectionHandler={props.ipSelectionHandler}
+          ipAddressInfoArray={props.ipAddressInfoArray}
+        />
+      </div>
+      <TileColumns minColumnWidth={250} gutterWidth={20}>
+        <Tile title="Ping Config">
+          <PingConfig ipAddressInfoArray={props.ipAddressInfoArray} pingbursts={props.pingbursts} />
+        </Tile>
+        <Tile title="At A Glance">
+          <AtAGlance {...props} />
+        </Tile>
+      </TileColumns>
+      <div className="tile_container_full tile_container_common">
+        <Monitor {...props} />
+      </div>
+    </PaneContainer>
   );
 }

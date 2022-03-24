@@ -1,14 +1,14 @@
 import {motion} from 'framer-motion';
-import React from 'react';
 import {useContext, useState} from 'react';
 import reactDom from 'react-dom';
 import {APIService} from '../APIService';
 import {getIPAddressInfoByIP} from '../App';
-import '../assets/PingJobMonitor.css';
 import {Color, ColorScheme, THEME, ThemeContext} from '../ColorScheme';
 import {Pingburst, IPAddressInfo, FlexTableFormat, NumberOfPacketsQuantity} from '../types';
 import {ComponentThemeImplementations} from '../utils';
+import {BackIcon} from './BackIcon';
 import FlexTable, {FlexTableProps} from './FlexTable';
+import ThemedButton, {THEMED_BUTTON_TYPE} from './ThemedButton';
 
 interface CloseIconTheme {
   light: {
@@ -91,6 +91,9 @@ function CloseButton(props: CloseButtonProps) {
   return (
     <motion.div
       whileTap={{scale: 1.2}}
+      style={{
+        cursor: 'pointer',
+      }}
       onClick={() => {
         props.closeHandler();
       }}
@@ -105,6 +108,7 @@ function CloseButton(props: CloseButtonProps) {
 interface PingJobMonitorProps {
   pingbursts: Pingburst[];
   ipAddressInfoArray: IPAddressInfo[];
+  closePingJobs: () => void;
 }
 
 interface PingJobRow {
@@ -172,7 +176,13 @@ export function PingJobMonitor(props: PingJobMonitorProps) {
     },
     {
       headerValue: (
-        <CloseButton isLight={true} closeHandler={() => abortAllPingJobs(pingJobRows)} />
+        <div
+          onClick={props.closePingJobs}
+          style={{display: 'flex', flexDirection: 'row', cursor: 'pointer'}}
+        >
+          <span>Back</span>
+          <BackIcon style={{width: 18}} fill="white" />
+        </div>
       ),
       style: {
         flexBasis: '100px',
@@ -190,8 +200,44 @@ export function PingJobMonitor(props: PingJobMonitorProps) {
   };
 
   return reactDom.createPortal(
-    <div className="ping_job_monitor_container">
-      <FlexTable<PingJobTable, PingJobRow> {...tableProps} />
+    <div
+      onClick={event => {
+        event.preventDefault();
+        if (event.target === event.currentTarget) {
+          props.closePingJobs();
+        }
+      }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        width: '100%',
+        height: '100vh',
+        zIndex: 0,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <div
+        style={{
+          width: 'max(50vw,400px)',
+          zIndex: 1,
+          position: 'relative',
+        }}
+      >
+        <FlexTable<PingJobTable, PingJobRow> {...tableProps} />
+        <ThemedButton
+          themedButtonType={THEMED_BUTTON_TYPE.PRIMARY}
+          style={{position: 'absolute', bottom: 10, right: 20}}
+          onClick={() => abortAllPingJobs(pingJobRows)}
+        >
+          Clear All
+        </ThemedButton>
+      </div>
     </div>,
     document.body
   );

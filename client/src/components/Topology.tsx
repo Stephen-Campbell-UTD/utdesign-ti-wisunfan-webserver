@@ -6,7 +6,6 @@ import dagre from 'cytoscape-dagre';
 import produce from 'immer';
 import {CytoscapeGraph, IPAddressInfo} from '../types';
 import {ComponentThemeImplementations} from '../utils';
-// import "../assets/Pane.css";
 cytoscape.use(dagre);
 
 interface TopologyProps {
@@ -139,12 +138,11 @@ export default class Topology extends React.Component<TopologyProps> {
         cy={cy => {
           this.cy = cy;
         }}
-        style={{width: '100%'}}
+        style={{width: '100%', height: 360}}
         layout={this.layout}
         stylesheet={stylesheet}
         wheelSensitivity={0.1}
       />
     );
-    // return <div style={{ width: "100%" }} id="cy"></div>;
   }
 }

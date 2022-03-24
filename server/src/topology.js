@@ -69,7 +69,7 @@ async function getLatestTopology(ClientState) {
       iterations++;
     }
 
-    let connectedDevices = Array.from(connectedDevicesSet);
+    let connectedDevices = Array.from(connectedDevicesSet).sort();
     connectedDevices.push(borderRouterIPInfo.ip);
     const routes = [];
     for (const ipAddr of connectedDevices) {

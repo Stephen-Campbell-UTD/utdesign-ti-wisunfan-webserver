@@ -1,6 +1,7 @@
-import React, {ReactNode, useEffect, useRef, useState} from 'react';
+import React, {ReactNode, RefObject, useEffect, useRef, useState} from 'react';
 import reactDom from 'react-dom';
 import '../assets/Tooltip.css';
+import {useLoc} from '../hooks/useLoc';
 
 interface Location {
   top: number;
@@ -44,26 +45,8 @@ interface TooltipProps {
 
 export default function Tooltip(props: TooltipProps) {
   const localRef = useRef<HTMLDivElement>(null);
-  const [left, setLeft] = useState(0);
-  const [top, setTop] = useState(0);
   const [shown, setShown] = useState(false);
-  useEffect(() => {
-    if (!shown) {
-      return;
-    }
-    if (localRef.current === null) {
-      return;
-    }
-    const boundingRect = localRef.current.getBoundingClientRect();
-    const currentLeft = boundingRect.left;
-    const currentTop = boundingRect.top + window.scrollY;
-    if (top !== currentTop) {
-      setTop(currentTop);
-    }
-    if (left !== currentLeft) {
-      setLeft(currentLeft);
-    }
-  }, [left, shown, top, setTop]);
+  const {left, top} = useLoc(localRef, shown);
   return (
     <div
       className="tooltip-container"
