@@ -14,6 +14,16 @@ interface TopologyProps {
   elements: CytoscapeGraph;
 }
 
+const getQuality = (quality: number) => {
+  if (quality > 66) {
+    return '#00FF00';
+  } else if (quality > 33) {
+    return '#FFFF00';
+  } else {
+    return '#FF0000';
+  }
+};
+
 interface TopologyTheme {
   stylesheet: cytoscape.Stylesheet[];
 }
@@ -30,8 +40,14 @@ const tiTopologyTheme: TopologyTheme = {
       selector: 'edge',
       style: {
         width: 3,
-        'line-color': ColorScheme.getColor('gray', THEME.TI),
-        'target-arrow-color': ColorScheme.getColor('gray', THEME.TI),
+        'line-color': ele => {
+          const quality = ele.data('quality');
+          console.log('quality', quality);
+          return getQuality(quality);
+        },
+        'target-arrow-color': ele => {
+          return getQuality(ele.data('quality'));
+        },
         'target-arrow-shape': 'triangle',
         'curve-style': 'bezier',
       },

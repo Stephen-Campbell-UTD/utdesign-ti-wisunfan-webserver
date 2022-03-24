@@ -3,7 +3,7 @@ const {topologyLogger} = require('./logger.js');
 const {parseConnectedDevices, parseDodagRoute, canonicalIPtoExpandedIP} = require('./parsing.js');
 const {getNetworkIPInfo} = require('./ClientState.js');
 
-function routesToGraph(routes) {
+function routesToGraph(routes, linkQualities) {
   let nodes = [];
   //populate nodes
   for (const route of routes) {
@@ -22,7 +22,10 @@ function routesToGraph(routes) {
       edge.source = route[i];
       edge.target = route[i + 1];
       edge.id = `${edge.source}->${edge.target}`;
-      if (!edges.some(otherEdge => otherEdge.id === edge.id)) {
+
+      edge.quality = linkQualities[edge.id];
+
+      if (!edges.some(otherEdge => otherEdge.data.id === edge.id)) {
         edges.push({data: edge});
       }
     }
@@ -83,7 +86,11 @@ async function getLatestTopology(ClientState) {
         `NumConnected Prop: ${numConnected}. ConnectedDevices Length ${connectedDevices.length}`
       );
     }
-    const graph = routesToGraph(routes);
+
+    let quality = Math.ceil(Math.random() * 100);
+    let linkQualities = {'2020:abcd::212:4b00:14f9:430d->2020:abcd::212:4b00:14f8:2af0': quality};
+    const graph = routesToGraph(routes, linkQualities);
+
     return {numConnected, connectedDevices, routes, graph};
   } catch (e) {
     topologyLogger.debug(`Failed to update. ${e}`);
