@@ -99,7 +99,7 @@ enum TAB_VIEW {
 }
 
 export interface AppState {
-  topology: Topology;
+  readonly topology: Topology;
   readonly ipAddressInfoArray: IPAddressInfo[];
   readonly pingbursts: Pingburst[];
   readonly connected: boolean;

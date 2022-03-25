@@ -6,6 +6,7 @@ import dagre from 'cytoscape-dagre';
 import produce from 'immer';
 import {CytoscapeGraph, IPAddressInfo} from '../types';
 import {ComponentThemeImplementations} from '../utils';
+
 cytoscape.use(dagre);
 
 interface TopologyProps {
@@ -16,11 +17,11 @@ interface TopologyProps {
 
 const getQuality = (quality: number) => {
   if (quality > 66) {
-    return '#00FF00';
+    return [1, 0];
   } else if (quality > 33) {
-    return '#FFFF00';
+    return [12, 3];
   } else {
-    return '#FF0000';
+    return [3, 3];
   }
 };
 
@@ -40,14 +41,13 @@ const tiTopologyTheme: TopologyTheme = {
       selector: 'edge',
       style: {
         width: 3,
-        'line-color': ele => {
+        'line-style': 'dashed',
+        'line-dash-pattern': ((ele: any) => {
           const quality = ele.data('quality');
           console.log('quality', quality);
           return getQuality(quality);
-        },
-        'target-arrow-color': ele => {
-          return getQuality(ele.data('quality'));
-        },
+        }) as any,
+        'target-arrow-color': ColorScheme.getColor('gray'),
         'target-arrow-shape': 'triangle',
         'curve-style': 'bezier',
       },
@@ -77,6 +77,11 @@ const gruvboxTopologyTheme = {
         'target-arrow-color': ColorScheme.getColor('fg0'),
         'target-arrow-shape': 'triangle',
         'curve-style': 'bezier',
+        'line-dash-pattern': ((ele: any) => {
+          const quality = ele.data('quality');
+          console.log('quality', quality);
+          return getQuality(quality);
+        }) as any,
       },
     },
     {
@@ -132,25 +137,27 @@ export default class Topology extends React.Component<TopologyProps> {
     }
     if (this.context !== this.previousTheme) {
       const {stylesheet} = topologyThemeImplementations.get(this.context);
-      this.cy.style(stylesheet);
+      // this.cy.style(stylesheet);
       this.previousTheme = this.context;
     }
   }
 
   render() {
     const ipInfoArray = this.props.ipAddressInfoArray;
-    const unnormalizedElements = produce(this.props.elements, elements => {
-      const nodes = elements.nodes;
-      for (const node of nodes) {
-        const ipInfo = ipInfoArray.find(ipInfo => ipInfo.ipAddress === node.data.id);
 
-        node.selected = ipInfo ? ipInfo.isSelected : false;
-      }
-    });
+    //elements attributes need to be mutable
+    const elements = JSON.parse(JSON.stringify(this.props.elements));
+
+    const nodes = elements.nodes;
+    for (const node of nodes) {
+      const ipInfo = ipInfoArray.find(ipInfo => ipInfo.ipAddress === node.data.id);
+      node.selected = ipInfo ? ipInfo.isSelected : false;
+    }
+
     const {stylesheet} = topologyThemeImplementations.get(this.context);
     return (
       <CytoscapeComponent
-        elements={CytoscapeComponent.normalizeElements(unnormalizedElements)}
+        elements={CytoscapeComponent.normalizeElements(elements)}
         cy={cy => {
           this.cy = cy;
         }}
