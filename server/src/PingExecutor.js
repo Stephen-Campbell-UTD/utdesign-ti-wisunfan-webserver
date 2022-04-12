@@ -1,4 +1,4 @@
-const ping = require('net-ping');
+const ping = require('ping');
 const path = require('path');
 const fs = require('fs');
 const {CONSTANTS} = require('./AppConstants');
@@ -12,17 +12,19 @@ class PingExecutor {
   }
 
   constructor() {
-    try {
-      this.session = ping.createSession({
-        networkProtocol: ping.NetworkProtocol.IPv6,
-        packetSize: 50,
-        sessionId: process.pid % 65535,
-        timeout: 1000,
-        ttl: 128,
-      });
-    } catch {
-      pingLogger.error('Tried to create Ping session and failed. Try running with sudo');
-    }
+    // this.timeout = 1000
+    // this.packetSize = 50
+    // try {
+    // this.session = ping.createSession({
+    //   networkProtocol: ping.NetworkProtocol.IPv6,
+    //   packetSize: 50,
+    //   sessionId: process.pid % 65535,
+    //   timeout: 1000,
+    //   ttl: 128,
+    // });
+    // } catch {
+    //   pingLogger.error('Tried to create Ping session and failed. Try running with sudo');
+    // }
     const csvHeaders = 'pingburstID,sourceIP,destIP,start_time,duration,packetSize,wasSuccess\n';
     const outputFilePath = path.join(CONSTANTS.OUTPUT_DIR_PATH, CONSTANTS.PING_RESULTS_FILE_NAME);
     fs.writeFile(outputFilePath, csvHeaders, function (err) {
@@ -43,24 +45,35 @@ class PingExecutor {
     });
   }
 
-  pingHost = async destIP => {
-    return new Promise((resolve, reject) => {
-      this.session.pingHost(destIP, function (error, _, sent, rcvd) {
-        let ms = rcvd - sent;
-        resolve({
-          start: timestamp(sent),
-          duration: error ? -1 : ms,
-          wasSuccess: !error, //js convert to bool
-        });
-      });
-    });
-  };
+  // pingHost = async destIP => {
+  //   return new Promise((resolve, reject) => {
+
+  //     // this.session.pingHost(destIP, function (error, _, sent, rcvd) {
+  //     //   let ms = rcvd - sent;
+  //     //   resolve({
+  //     //     start: timestamp(sent),
+  //     //     duration: error ? -1 : ms,
+  //     //     wasSuccess: !error, //js convert to bool
+  //     //   });
+  //     // });
+  //   });
+  // };
 
   getPingResult = async pingburstRequest => {
     pingLogger.info(`Ping ${JSON.stringify(pingburstRequest)}. `);
-    this.session.timeout = pingburstRequest.timeout;
-    this.session.packetSize = pingburstRequest.packetSize;
-    return await this.pingHost(pingburstRequest.destIP);
+    // return await this.pingHost(pingburstRequest.destIP);
+
+    const start = timestamp(new Date());
+    let res = await ping.promise.probe(pingburstRequest.destIP, {
+      timeout: pingburstRequest.timeout * 0.001,
+      packetSize: pingburstRequest.packetSize,
+      v6: true,
+    });
+    if (res.alive) {
+      return {start, duration: res.time, wasSuccess: true};
+    } else {
+      return {start, duration: -1, wasSuccess: false};
+    }
   };
   abort = pingburstID => {
     const wasSuccess = this.pingbursts[pingburstID].abortPingburst();
